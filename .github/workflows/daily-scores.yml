@@ -1,0 +1,41 @@
+name: Daily v2.2 Scores
+
+# 언제 실행되나
+on:
+  schedule:
+    # 매 평일 22:00 UTC = 07:00 KST (미국 장 마감 직후 → 한·미 둘 다 최신 종가)
+    # cron은 UTC 기준. 시간 바꾸려면 아래 숫자만 수정 (분 시 일 월 요일)
+    - cron: "0 22 * * 1-5"
+  workflow_dispatch:   # ← Actions 탭에서 "Run workflow" 버튼으로 수동 실행(테스트용)
+
+# scores.json을 다시 커밋해야 하므로 쓰기 권한 부여
+permissions:
+  contents: write
+
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 코드 가져오기
+        uses: actions/checkout@v4
+
+      - name: 파이썬 준비
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 라이브러리 설치
+        run: pip install -r requirements.txt
+
+      - name: 점수 엔진 실행
+        env:
+          DART_API_KEY: ${{ secrets.DART_API_KEY }}   # ← Settings의 Secret에서 주입(없으면 CSV로 동작)
+        run: python engine.py
+
+      - name: scores.json 커밋
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add scores.json
+          # 바뀐 게 없으면(주말·휴장 등) 그냥 통과, 있으면 커밋·푸시
+          git diff --staged --quiet || (git commit -m "Update scores $(date -u +%Y-%m-%d)" && git push)
