@@ -208,7 +208,10 @@ def build_row(stock, market, fx, inp):
     return {
         "rank": stock["rank"], "name": stock["name"], "ticker": stock["ticker"], "type": typ,
         "close": round(h["close"], 2), "chg_pct": round(h["chg_pct"], 2),
-        "total": round(total) if total is not None else None,
+        "ma20": round(h["ma20"], 1), "ma60": round(h["ma60"], 1) if h["ma60"] else None,
+        "hi52": round(h["hi52"], 2), "lo52": round(h["lo52"], 2),
+        "disparity": round(disp, 1), "fx_penalty": fxp,
+        **comp, "total": round(total) if total is not None else None,
         "gate": final_gate(typ, total, dsc),
     }
 

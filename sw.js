@@ -1,5 +1,5 @@
 // 매수타이밍 v2.2 — 서비스워커
-const CACHE = "v22-shell-v3";
+const CACHE = "v22-shell-v2";
 const SHELL = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (e) => {
