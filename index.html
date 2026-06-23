@@ -395,8 +395,7 @@ var d=null!=c&&c.hydratedSources||null,e=!1,f="",g=aj;null!==c&&void 0!==c&&(!0=
 function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmountComponentAtNode=function(a){if(!Vd(a))throw Error(m(40));return a._reactRootContainer?(yb(function(){Wd(null,null,a,!1,function(){a._reactRootContainer=null;a[Ja]=null})}),!0):!1};Q.unstable_batchedUpdates=Tf;Q.unstable_renderSubtreeIntoContainer=function(a,b,c,d){if(!Vd(c))throw Error(m(200));if(null==a||void 0===a._reactInternals)throw Error(m(38));return Wd(a,b,c,!1,d)};Q.version="18.3.1-next-f1338f8080-20240426"});
 })();
 </script>
-<script>import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
-const {
+<script>const {
   useState,
   useEffect
 } = React;
@@ -410,7 +409,7 @@ const Svg = ({
   children,
   fill = "none",
   color = "currentColor"
-}) => /*#__PURE__*/_jsx("svg", {
+}) => /*#__PURE__*/React.createElement("svg", {
   width: size,
   height: size,
   viewBox: "0 0 24 24",
@@ -421,107 +420,90 @@ const Svg = ({
   strokeLinejoin: "round",
   style: {
     display: 'block'
-  },
-  children: children
-});
-const Info = p => /*#__PURE__*/_jsxs(Svg, {
-  ...p,
-  children: [/*#__PURE__*/_jsx("circle", {
-    cx: "12",
-    cy: "12",
-    r: "10"
-  }), /*#__PURE__*/_jsx("line", {
-    x1: "12",
-    y1: "16",
-    x2: "12",
-    y2: "12"
-  }), /*#__PURE__*/_jsx("line", {
-    x1: "12",
-    y1: "8",
-    x2: "12.01",
-    y2: "8"
-  })]
-});
+  }
+}, children);
+const Info = p => /*#__PURE__*/React.createElement(Svg, p, /*#__PURE__*/React.createElement("circle", {
+  cx: "12",
+  cy: "12",
+  r: "10"
+}), /*#__PURE__*/React.createElement("line", {
+  x1: "12",
+  y1: "16",
+  x2: "12",
+  y2: "12"
+}), /*#__PURE__*/React.createElement("line", {
+  x1: "12",
+  y1: "8",
+  x2: "12.01",
+  y2: "8"
+}));
 const Star = ({
   size,
   fill,
   color
-}) => /*#__PURE__*/_jsx(Svg, {
+}) => /*#__PURE__*/React.createElement(Svg, {
   size: size,
   fill: fill || "none",
-  color: color,
-  children: /*#__PURE__*/_jsx("polygon", {
-    points: "12 2 15 9 22 9 16.5 13.5 18.5 21 12 16.5 5.5 21 7.5 13.5 2 9 9 9"
-  })
-});
-const Newspaper = p => /*#__PURE__*/_jsxs(Svg, {
-  ...p,
-  children: [/*#__PURE__*/_jsx("path", {
-    d: "M4 4h13v16H6a2 2 0 0 1-2-2z"
-  }), /*#__PURE__*/_jsx("line", {
-    x1: "7",
-    y1: "8",
-    x2: "14",
-    y2: "8"
-  }), /*#__PURE__*/_jsx("line", {
-    x1: "7",
-    y1: "12",
-    x2: "14",
-    y2: "12"
-  }), /*#__PURE__*/_jsx("line", {
-    x1: "7",
-    y1: "16",
-    x2: "11",
-    y2: "16"
-  }), /*#__PURE__*/_jsx("path", {
-    d: "M17 8h3v10a2 2 0 0 1-2 2"
-  })]
-});
-const BarChart3 = p => /*#__PURE__*/_jsxs(Svg, {
-  ...p,
-  children: [/*#__PURE__*/_jsx("line", {
-    x1: "6",
-    y1: "20",
-    x2: "6",
-    y2: "12"
-  }), /*#__PURE__*/_jsx("line", {
-    x1: "12",
-    y1: "20",
-    x2: "12",
-    y2: "6"
-  }), /*#__PURE__*/_jsx("line", {
-    x1: "18",
-    y1: "20",
-    x2: "18",
-    y2: "14"
-  })]
-});
-const RefreshCw = p => /*#__PURE__*/_jsxs(Svg, {
-  ...p,
-  children: [/*#__PURE__*/_jsx("path", {
-    d: "M21 12a9 9 0 1 1-3-6.7L21 8"
-  }), /*#__PURE__*/_jsx("path", {
-    d: "M21 3v5h-5"
-  })]
-});
-const AlertCircle = p => /*#__PURE__*/_jsxs(Svg, {
-  ...p,
-  children: [/*#__PURE__*/_jsx("circle", {
-    cx: "12",
-    cy: "12",
-    r: "10"
-  }), /*#__PURE__*/_jsx("line", {
-    x1: "12",
-    y1: "8",
-    x2: "12",
-    y2: "12"
-  }), /*#__PURE__*/_jsx("line", {
-    x1: "12",
-    y1: "16",
-    x2: "12.01",
-    y2: "16"
-  })]
-});
+  color: color
+}, /*#__PURE__*/React.createElement("polygon", {
+  points: "12 2 15 9 22 9 16.5 13.5 18.5 21 12 16.5 5.5 21 7.5 13.5 2 9 9 9"
+}));
+const Newspaper = p => /*#__PURE__*/React.createElement(Svg, p, /*#__PURE__*/React.createElement("path", {
+  d: "M4 4h13v16H6a2 2 0 0 1-2-2z"
+}), /*#__PURE__*/React.createElement("line", {
+  x1: "7",
+  y1: "8",
+  x2: "14",
+  y2: "8"
+}), /*#__PURE__*/React.createElement("line", {
+  x1: "7",
+  y1: "12",
+  x2: "14",
+  y2: "12"
+}), /*#__PURE__*/React.createElement("line", {
+  x1: "7",
+  y1: "16",
+  x2: "11",
+  y2: "16"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M17 8h3v10a2 2 0 0 1-2 2"
+}));
+const BarChart3 = p => /*#__PURE__*/React.createElement(Svg, p, /*#__PURE__*/React.createElement("line", {
+  x1: "6",
+  y1: "20",
+  x2: "6",
+  y2: "12"
+}), /*#__PURE__*/React.createElement("line", {
+  x1: "12",
+  y1: "20",
+  x2: "12",
+  y2: "6"
+}), /*#__PURE__*/React.createElement("line", {
+  x1: "18",
+  y1: "20",
+  x2: "18",
+  y2: "14"
+}));
+const RefreshCw = p => /*#__PURE__*/React.createElement(Svg, p, /*#__PURE__*/React.createElement("path", {
+  d: "M21 12a9 9 0 1 1-3-6.7L21 8"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M21 3v5h-5"
+}));
+const AlertCircle = p => /*#__PURE__*/React.createElement(Svg, p, /*#__PURE__*/React.createElement("circle", {
+  cx: "12",
+  cy: "12",
+  r: "10"
+}), /*#__PURE__*/React.createElement("line", {
+  x1: "12",
+  y1: "8",
+  x2: "12",
+  y2: "12"
+}), /*#__PURE__*/React.createElement("line", {
+  x1: "12",
+  y1: "16",
+  x2: "12.01",
+  y2: "16"
+}));
 const STATUS = {
   ok: {
     label: "매수가능",
@@ -561,14 +543,13 @@ const Pill = ({
   gate
 }) => {
   const s = STATUS[gate] || STATUS.pending;
-  return /*#__PURE__*/_jsxs("span", {
+  return /*#__PURE__*/React.createElement("span", {
     className: "pill",
     style: {
       color: s.color,
       background: s.bg
-    },
-    children: [s.icon, " ", s.label]
-  });
+    }
+  }, s.icon, " ", s.label);
 };
 function App() {
   const [data, setData] = useState(null);
@@ -604,391 +585,244 @@ function App() {
   if (filter === "buy") scored = scored.filter(x => isBuyable(x.gate));
   if (filter === "hold") scored = scored.filter(x => !isBuyable(x.gate));
   scored.sort((a, b) => (b.total ?? -1) - (a.total ?? -1));
-  return /*#__PURE__*/_jsx("div", {
-    className: "app-page",
-    children: /*#__PURE__*/_jsxs("div", {
-      className: "phone",
-      children: [/*#__PURE__*/_jsx("div", {
-        className: "hd",
-        children: /*#__PURE__*/_jsxs("div", {
-          className: "hd-top",
-          children: [/*#__PURE__*/_jsxs("div", {
-            children: [/*#__PURE__*/_jsx("div", {
-              className: "kicker",
-              children: tab === "brief" ? "Daily Market Brief · v2.2" : "Buy-Timing Score · v2.2"
-            }), /*#__PURE__*/_jsx("div", {
-              className: "title",
-              children: tab === "brief" ? "오늘의 브리핑" : "매수타이밍 점수"
-            }), /*#__PURE__*/_jsx("div", {
-              className: "date",
-              children: data?.as_of ? `${data.as_of} 기준` : "—"
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            className: "icorow",
-            children: [/*#__PURE__*/_jsx("div", {
-              className: "icobtn",
-              onClick: load,
-              title: "새로고침",
-              children: /*#__PURE__*/_jsx(RefreshCw, {
-                size: 16
-              })
-            }), tab === "score" && /*#__PURE__*/_jsx("div", {
-              className: "icobtn",
-              onClick: () => setInfo(!info),
-              children: /*#__PURE__*/_jsx(Info, {
-                size: 17
-              })
-            })]
-          })]
-        })
-      }), /*#__PURE__*/_jsxs("div", {
-        className: "seg",
-        children: [/*#__PURE__*/_jsx("button", {
-          className: market === "kr" ? "on" : "",
-          onClick: () => {
-            setMarket("kr");
-            setOpen(null);
-          },
-          children: "🇰🇷 한국"
-        }), /*#__PURE__*/_jsx("button", {
-          className: market === "us" ? "on" : "",
-          onClick: () => {
-            setMarket("us");
-            setOpen(null);
-          },
-          children: "🇺🇸 미국"
-        })]
-      }), loading ? /*#__PURE__*/_jsxs("div", {
-        className: "center",
-        children: [/*#__PURE__*/_jsx("div", {
-          className: "spinner"
-        }), /*#__PURE__*/_jsx("div", {
-          className: "muted",
-          children: "scores.json 불러오는 중…"
-        })]
-      }) : err ? /*#__PURE__*/_jsxs("div", {
-        className: "center",
-        children: [/*#__PURE__*/_jsx(AlertCircle, {
-          size: 30,
-          color: "#e7704e"
-        }), /*#__PURE__*/_jsxs("div", {
-          className: "muted",
-          children: ["데이터를 불러오지 못했어요.", /*#__PURE__*/_jsx("br", {}), /*#__PURE__*/_jsx("b", {
-            style: {
-              color: '#a8adb6'
-            },
-            children: err
-          }), /*#__PURE__*/_jsx("br", {}), /*#__PURE__*/_jsx("br", {}), "저장소가 Public인지, SCORES_URL이 맞는지 확인해 주세요."]
-        }), /*#__PURE__*/_jsxs("button", {
-          className: "retry",
-          onClick: load,
-          children: [/*#__PURE__*/_jsx(RefreshCw, {
-            size: 14
-          }), " 다시 시도"]
-        })]
-      }) : tab === "brief" ? /*#__PURE__*/_jsxs("div", {
-        className: "scroll",
-        children: [/*#__PURE__*/_jsxs("div", {
-          className: "brief",
-          children: [/*#__PURE__*/_jsxs("div", {
-            className: "brief-h",
-            children: [/*#__PURE__*/_jsx("h3", {
-              children: "오늘의 요약"
-            }), /*#__PURE__*/_jsx("span", {
-              className: "vtag",
-              children: "v2.2"
-            })]
-          }), /*#__PURE__*/_jsx("div", {
-            className: "brief-b",
-            children: market === "kr" ? /*#__PURE__*/_jsxs(_Fragment, {
-              children: ["환율 ", /*#__PURE__*/_jsxs("b", {
-                children: [fmt(data.fx_usdkrw), "원"]
-              }), " · 한국 상위 ", byRank.length, "종목 중 게이트 통과 ", /*#__PURE__*/_jsxs("b", {
-                children: [buyN, "종목"]
-              }), ". 종합점수가 높아도 이격도 게이트에 막히면 보류예요."]
-            }) : /*#__PURE__*/_jsxs(_Fragment, {
-              children: ["환율 ", /*#__PURE__*/_jsxs("b", {
-                children: [fmt(data.fx_usdkrw), "원"]
-              }), "이라 미국주 ", /*#__PURE__*/_jsxs("b", {
-                children: [data.fx_penalty, "점"]
-              }), " 페널티 적용 중. 게이트 통과 ", /*#__PURE__*/_jsxs("b", {
-                children: [buyN, "종목"]
-              }), "."]
-            })
-          }), buyList.length > 0 && /*#__PURE__*/_jsx("div", {
-            className: "buychips",
-            children: buyList.slice(0, 8).map(x => /*#__PURE__*/_jsxs("span", {
-              className: "buychip",
-              children: [x.name, " ", x.total]
-            }, x.rank))
-          })]
-        }), /*#__PURE__*/_jsx("div", {
-          className: "seclabel",
-          children: "시총 순위"
-        }), /*#__PURE__*/_jsx("div", {
-          style: {
-            padding: "0 12px 16px"
-          },
-          children: byRank.map(x => /*#__PURE__*/_jsxs("div", {
-            className: "brow",
-            children: [/*#__PURE__*/_jsx("span", {
-              className: "brank",
-              children: String(x.rank).padStart(2, "0")
-            }), /*#__PURE__*/_jsx("span", {
-              className: "bname",
-              children: x.name
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "bpr",
-              children: [/*#__PURE__*/_jsxs("span", {
-                className: "bp",
-                children: [cur, fmt(x.close)]
-              }), /*#__PURE__*/_jsxs("span", {
-                className: "bchg",
-                style: {
-                  color: chgColor(x.chg_pct)
-                },
-                children: [x.chg_pct >= 0 ? "▲" : "▼", " ", Math.abs(x.chg_pct).toFixed(2), "%"]
-              })]
-            }), /*#__PURE__*/_jsx("span", {
-              className: "gdot",
-              style: {
-                background: (STATUS[x.gate] || STATUS.pending).color
-              }
-            })]
-          }, x.rank))
-        })]
-      }, "b" + market) : /*#__PURE__*/_jsxs("div", {
-        className: "scroll",
-        children: [info && /*#__PURE__*/_jsxs("div", {
-          className: "info",
-          children: [/*#__PURE__*/_jsxs("div", {
-            children: [/*#__PURE__*/_jsx("b", {
-              children: "유형 A"
-            }), ": 펀더35 · 추세건전성30(이격도12+정배열10+거래량8) · 모멘텀15 · 시장위험20"]
-          }), /*#__PURE__*/_jsxs("div", {
-            style: {
-              marginTop: 4
-            },
-            children: [/*#__PURE__*/_jsx("b", {
-              children: "유형 B"
-            }), ": 펀더30 · 52주위치20 · 낙폭15 · 모멘텀20 · 시장위험15"]
-          }), /*#__PURE__*/_jsxs("div", {
-            style: {
-              marginTop: 6
-            },
-            children: [/*#__PURE__*/_jsx("b", {
-              children: "게이트"
-            }), " = 종합 ", /*#__PURE__*/_jsx("b", {
-              children: "60점+"
-            }), " 그리고 (유형A는) ", /*#__PURE__*/_jsx("b", {
-              children: "이격도 7점+"
-            }), ". 미국은 환율 페널티 차감."]
-          }), /*#__PURE__*/_jsx("div", {
-            className: "leg",
-            children: ["ok", "hot", "blocked", "below"].map(g => /*#__PURE__*/_jsxs("span", {
-              children: [/*#__PURE__*/_jsx("i", {
-                className: "ldot",
-                style: {
-                  background: STATUS[g].color
-                }
-              }), STATUS[g].label]
-            }, g))
-          })]
-        }), /*#__PURE__*/_jsx("div", {
-          className: "summary",
-          children: ["ok", "hot", "blocked", "below"].map(g => /*#__PURE__*/_jsxs("div", {
-            className: "stat",
-            children: [/*#__PURE__*/_jsx("div", {
-              className: "n",
-              style: {
-                color: STATUS[g].color
-              },
-              children: counts[g] || 0
-            }), /*#__PURE__*/_jsx("div", {
-              className: "l",
-              children: STATUS[g].label
-            })]
-          }, g))
-        }), /*#__PURE__*/_jsx("div", {
-          className: "ctx",
-          children: market === "kr" ? /*#__PURE__*/_jsxs(_Fragment, {
-            children: ["오늘 매수가능 ", /*#__PURE__*/_jsxs("b", {
-              children: [buyN, "종목"]
-            }), ". 게이트 통과한 종목만 분할 1차 진입 대상."]
-          }) : /*#__PURE__*/_jsxs(_Fragment, {
-            children: ["환율 ", /*#__PURE__*/_jsxs("b", {
-              children: [data.fx_penalty, "점"]
-            }), " 페널티 적용 중 (", fmt(data.fx_usdkrw), "원). 매수가능 ", /*#__PURE__*/_jsxs("b", {
-              children: [buyN, "종목"]
-            }), "."]
-          })
-        }), /*#__PURE__*/_jsx("div", {
-          className: "chips",
-          children: [["all", "전체"], ["buy", "✅ 매수가능"], ["hold", "보류"]].map(([k, l]) => /*#__PURE__*/_jsx("button", {
-            className: `chip ${filter === k ? "on" : ""}`,
-            onClick: () => setFilter(k),
-            children: l
-          }, k))
-        }), /*#__PURE__*/_jsx("div", {
-          style: {
-            padding: "2px 12px 8px"
-          },
-          children: scored.map(x => {
-            const id = `${market}-${x.rank}`;
-            const s = STATUS[x.gate] || STATUS.pending;
-            const drv = x.type === "A" ? `유형A · 이격도 ${x.disparity_score}점 (${x.disparity}%)${x.total == null ? " · 펀더 대기" : ""}` : `유형B · 낙폭 ${x.drawdown ?? "-"}/15 · 52주 ${x.pos_52w ?? "-"}/20${x.total == null ? " · 펀더 대기" : ""}`;
-            return /*#__PURE__*/_jsxs("div", {
-              children: [/*#__PURE__*/_jsxs("div", {
-                className: "srow",
-                onClick: () => setOpen(open === id ? null : id),
-                children: [/*#__PURE__*/_jsx("span", {
-                  className: "bar",
-                  style: {
-                    background: s.color
-                  }
-                }), /*#__PURE__*/_jsx("span", {
-                  className: "sc",
-                  style: {
-                    color: s.color
-                  },
-                  children: x.total ?? "—"
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "mid",
-                  children: [/*#__PURE__*/_jsxs("div", {
-                    className: "nm",
-                    children: [x.gate === "ok" && x.type === "A" && x.disparity_score === 12 && x.disparity < 0 && /*#__PURE__*/_jsx(Star, {
-                      size: 13,
-                      fill: "#d9a441",
-                      color: "#d9a441"
-                    }), /*#__PURE__*/_jsx("span", {
-                      className: "name",
-                      children: x.name
-                    }), /*#__PURE__*/_jsx("span", {
-                      className: `typetag ${x.type === "A" ? "ta" : "tb"}`,
-                      children: x.type
-                    })]
-                  }), /*#__PURE__*/_jsx("div", {
-                    className: "drv",
-                    children: drv
-                  })]
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "right",
-                  children: [/*#__PURE__*/_jsx(Pill, {
-                    gate: x.gate
-                  }), /*#__PURE__*/_jsxs("span", {
-                    className: "chg",
-                    style: {
-                      color: chgColor(x.chg_pct)
-                    },
-                    children: [x.chg_pct >= 0 ? "▲" : "▼", " ", Math.abs(x.chg_pct).toFixed(2), "%"]
-                  })]
-                })]
-              }), open === id && /*#__PURE__*/_jsxs("div", {
-                className: "detail",
-                children: [/*#__PURE__*/_jsxs("div", {
-                  className: "grid",
-                  children: [/*#__PURE__*/_jsxs("div", {
-                    className: "kv",
-                    children: [/*#__PURE__*/_jsx("span", {
-                      children: "종합"
-                    }), " ", /*#__PURE__*/_jsx("b", {
-                      children: x.total ?? "대기"
-                    })]
-                  }), /*#__PURE__*/_jsxs("div", {
-                    className: "kv",
-                    children: [/*#__PURE__*/_jsx("span", {
-                      children: "펀더"
-                    }), " ", /*#__PURE__*/_jsx("b", {
-                      children: x.fundamental ?? "—"
-                    })]
-                  }), x.type === "A" ? /*#__PURE__*/_jsxs(_Fragment, {
-                    children: [/*#__PURE__*/_jsxs("div", {
-                      className: "kv",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        children: "이격도"
-                      }), " ", /*#__PURE__*/_jsxs("b", {
-                        children: [x.disparity, "%(", x.disparity_score, ")"]
-                      })]
-                    }), /*#__PURE__*/_jsxs("div", {
-                      className: "kv",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        children: "추세건전성"
-                      }), " ", /*#__PURE__*/_jsxs("b", {
-                        children: [x.trend_health, "/30"]
-                      })]
-                    })]
-                  }) : /*#__PURE__*/_jsxs(_Fragment, {
-                    children: [/*#__PURE__*/_jsxs("div", {
-                      className: "kv",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        children: "52주위치"
-                      }), " ", /*#__PURE__*/_jsxs("b", {
-                        children: [x.pos_52w, "/20"]
-                      })]
-                    }), /*#__PURE__*/_jsxs("div", {
-                      className: "kv",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        children: "낙폭"
-                      }), " ", /*#__PURE__*/_jsxs("b", {
-                        children: [x.drawdown, "/15"]
-                      })]
-                    })]
-                  }), /*#__PURE__*/_jsxs("div", {
-                    className: "kv",
-                    children: [/*#__PURE__*/_jsx("span", {
-                      children: "모멘텀"
-                    }), " ", /*#__PURE__*/_jsx("b", {
-                      children: x.momentum
-                    })]
-                  }), /*#__PURE__*/_jsxs("div", {
-                    className: "kv",
-                    children: [/*#__PURE__*/_jsx("span", {
-                      children: "시장위험"
-                    }), " ", /*#__PURE__*/_jsx("b", {
-                      children: x.market_risk
-                    })]
-                  }), market === "us" && /*#__PURE__*/_jsxs("div", {
-                    className: "kv",
-                    children: [/*#__PURE__*/_jsx("span", {
-                      children: "환율"
-                    }), " ", /*#__PURE__*/_jsx("b", {
-                      children: x.fx_penalty
-                    })]
-                  })]
-                }), /*#__PURE__*/_jsxs("div", {
-                  children: [x.gate === "ok" && "✅ 게이트 통과 — 분할 1차 진입 가능.", x.gate === "hot" && "⚠️ 이격도 과열 영역 — 분할 1차만 보수적으로.", x.gate === "blocked" && "⛔ 점수는 높지만 이격도 미달 — 강제 DCA 30%만, 70%는 회귀까지 대기.", x.gate === "below" && "60점 미달 — 매수 보류.", x.gate === "pending" && "영업이익(펀더멘털) 데이터가 없어 종합점수 산정 대기."]
-                })]
-              })]
-            }, id);
-          })
-        }), /*#__PURE__*/_jsx("div", {
-          className: "foot",
-          children: "시세·이격도·게이트는 자동 산출. 한국 펀더멘털은 DART, 미국은 inputs.csv. 매수 전용 단계 분석."
-        })]
-      }, "s" + market + filter), /*#__PURE__*/_jsxs("div", {
-        className: "tabbar",
-        children: [/*#__PURE__*/_jsxs("button", {
-          className: tab === "brief" ? "on" : "",
-          onClick: () => setTab("brief"),
-          children: [/*#__PURE__*/_jsx(Newspaper, {
-            size: 20
-          }), " 브리핑 ", /*#__PURE__*/_jsx("span", {
-            className: "tdash"
-          })]
-        }), /*#__PURE__*/_jsxs("button", {
-          className: tab === "score" ? "on" : "",
-          onClick: () => setTab("score"),
-          children: [/*#__PURE__*/_jsx(BarChart3, {
-            size: 20
-          }), " 점수 ", /*#__PURE__*/_jsx("span", {
-            className: "tdash"
-          })]
-        })]
-      })]
-    })
-  });
+  return /*#__PURE__*/React.createElement("div", {
+    className: "app-page"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "phone"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "hd"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "hd-top"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "kicker"
+  }, tab === "brief" ? "Daily Market Brief · v2.2" : "Buy-Timing Score · v2.2"), /*#__PURE__*/React.createElement("div", {
+    className: "title"
+  }, tab === "brief" ? "오늘의 브리핑" : "매수타이밍 점수"), /*#__PURE__*/React.createElement("div", {
+    className: "date"
+  }, data?.as_of ? `${data.as_of} 기준` : "—")), /*#__PURE__*/React.createElement("div", {
+    className: "icorow"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "icobtn",
+    onClick: load,
+    title: "새로고침"
+  }, /*#__PURE__*/React.createElement(RefreshCw, {
+    size: 16
+  })), tab === "score" && /*#__PURE__*/React.createElement("div", {
+    className: "icobtn",
+    onClick: () => setInfo(!info)
+  }, /*#__PURE__*/React.createElement(Info, {
+    size: 17
+  }))))), /*#__PURE__*/React.createElement("div", {
+    className: "seg"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: market === "kr" ? "on" : "",
+    onClick: () => {
+      setMarket("kr");
+      setOpen(null);
+    }
+  }, "🇰🇷 한국"), /*#__PURE__*/React.createElement("button", {
+    className: market === "us" ? "on" : "",
+    onClick: () => {
+      setMarket("us");
+      setOpen(null);
+    }
+  }, "🇺🇸 미국")), loading ? /*#__PURE__*/React.createElement("div", {
+    className: "center"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "spinner"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "muted"
+  }, "scores.json 불러오는 중…")) : err ? /*#__PURE__*/React.createElement("div", {
+    className: "center"
+  }, /*#__PURE__*/React.createElement(AlertCircle, {
+    size: 30,
+    color: "#e7704e"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "muted"
+  }, "데이터를 불러오지 못했어요.", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: '#a8adb6'
+    }
+  }, err), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("br", null), "저장소가 Public인지, SCORES_URL이 맞는지 확인해 주세요."), /*#__PURE__*/React.createElement("button", {
+    className: "retry",
+    onClick: load
+  }, /*#__PURE__*/React.createElement(RefreshCw, {
+    size: 14
+  }), " 다시 시도")) : tab === "brief" ? /*#__PURE__*/React.createElement("div", {
+    className: "scroll",
+    key: "b" + market
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "brief"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "brief-h"
+  }, /*#__PURE__*/React.createElement("h3", null, "오늘의 요약"), /*#__PURE__*/React.createElement("span", {
+    className: "vtag"
+  }, "v2.2")), /*#__PURE__*/React.createElement("div", {
+    className: "brief-b"
+  }, market === "kr" ? /*#__PURE__*/React.createElement(React.Fragment, null, "환율 ", /*#__PURE__*/React.createElement("b", null, fmt(data.fx_usdkrw), "원"), " · 한국 상위 ", byRank.length, "종목 중 게이트 통과 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), ". 종합점수가 높아도 이격도 게이트에 막히면 보류예요.") : /*#__PURE__*/React.createElement(React.Fragment, null, "환율 ", /*#__PURE__*/React.createElement("b", null, fmt(data.fx_usdkrw), "원"), "이라 미국주 ", /*#__PURE__*/React.createElement("b", null, data.fx_penalty, "점"), " 페널티 적용 중. 게이트 통과 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), ".")), buyList.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "buychips"
+  }, buyList.slice(0, 8).map(x => /*#__PURE__*/React.createElement("span", {
+    className: "buychip",
+    key: x.rank
+  }, x.name, " ", x.total)))), /*#__PURE__*/React.createElement("div", {
+    className: "seclabel"
+  }, "시총 순위"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "0 12px 16px"
+    }
+  }, byRank.map(x => /*#__PURE__*/React.createElement("div", {
+    className: "brow",
+    key: x.rank
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "brank"
+  }, String(x.rank).padStart(2, "0")), /*#__PURE__*/React.createElement("span", {
+    className: "bname"
+  }, x.name), /*#__PURE__*/React.createElement("div", {
+    className: "bpr"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "bp"
+  }, cur, fmt(x.close)), /*#__PURE__*/React.createElement("span", {
+    className: "bchg",
+    style: {
+      color: chgColor(x.chg_pct)
+    }
+  }, x.chg_pct >= 0 ? "▲" : "▼", " ", Math.abs(x.chg_pct).toFixed(2), "%")), /*#__PURE__*/React.createElement("span", {
+    className: "gdot",
+    style: {
+      background: (STATUS[x.gate] || STATUS.pending).color
+    }
+  }))))) : /*#__PURE__*/React.createElement("div", {
+    className: "scroll",
+    key: "s" + market + filter
+  }, info && /*#__PURE__*/React.createElement("div", {
+    className: "info"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("b", null, "유형 A"), ": 펀더35 · 추세건전성30(이격도12+정배열10+거래량8) · 모멘텀15 · 시장위험20"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 4
+    }
+  }, /*#__PURE__*/React.createElement("b", null, "유형 B"), ": 펀더30 · 52주위치20 · 낙폭15 · 모멘텀20 · 시장위험15"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 6
+    }
+  }, /*#__PURE__*/React.createElement("b", null, "게이트"), " = 종합 ", /*#__PURE__*/React.createElement("b", null, "60점+"), " 그리고 (유형A는) ", /*#__PURE__*/React.createElement("b", null, "이격도 7점+"), ". 미국은 환율 페널티 차감."), /*#__PURE__*/React.createElement("div", {
+    className: "leg"
+  }, ["ok", "hot", "blocked", "below"].map(g => /*#__PURE__*/React.createElement("span", {
+    key: g
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "ldot",
+    style: {
+      background: STATUS[g].color
+    }
+  }), STATUS[g].label)))), /*#__PURE__*/React.createElement("div", {
+    className: "summary"
+  }, ["ok", "hot", "blocked", "below"].map(g => /*#__PURE__*/React.createElement("div", {
+    className: "stat",
+    key: g
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "n",
+    style: {
+      color: STATUS[g].color
+    }
+  }, counts[g] || 0), /*#__PURE__*/React.createElement("div", {
+    className: "l"
+  }, STATUS[g].label)))), /*#__PURE__*/React.createElement("div", {
+    className: "ctx"
+  }, market === "kr" ? /*#__PURE__*/React.createElement(React.Fragment, null, "오늘 매수가능 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), ". 게이트 통과한 종목만 분할 1차 진입 대상.") : /*#__PURE__*/React.createElement(React.Fragment, null, "환율 ", /*#__PURE__*/React.createElement("b", null, data.fx_penalty, "점"), " 페널티 적용 중 (", fmt(data.fx_usdkrw), "원). 매수가능 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), ".")), /*#__PURE__*/React.createElement("div", {
+    className: "chips"
+  }, [["all", "전체"], ["buy", "✅ 매수가능"], ["hold", "보류"]].map(([k, l]) => /*#__PURE__*/React.createElement("button", {
+    key: k,
+    className: `chip ${filter === k ? "on" : ""}`,
+    onClick: () => setFilter(k)
+  }, l))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "2px 12px 8px"
+    }
+  }, scored.map(x => {
+    const id = `${market}-${x.rank}`;
+    const s = STATUS[x.gate] || STATUS.pending;
+    const drv = x.type === "A" ? `유형A · 이격도 ${x.disparity_score}점 (${x.disparity}%)${x.total == null ? " · 펀더 대기" : ""}` : `유형B · 낙폭 ${x.drawdown ?? "-"}/15 · 52주 ${x.pos_52w ?? "-"}/20${x.total == null ? " · 펀더 대기" : ""}`;
+    return /*#__PURE__*/React.createElement("div", {
+      key: id
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "srow",
+      onClick: () => setOpen(open === id ? null : id)
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "bar",
+      style: {
+        background: s.color
+      }
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "sc",
+      style: {
+        color: s.color
+      }
+    }, x.total ?? "—"), /*#__PURE__*/React.createElement("div", {
+      className: "mid"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "nm"
+    }, x.gate === "ok" && x.type === "A" && x.disparity_score === 12 && x.disparity < 0 && /*#__PURE__*/React.createElement(Star, {
+      size: 13,
+      fill: "#d9a441",
+      color: "#d9a441"
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "name"
+    }, x.name), /*#__PURE__*/React.createElement("span", {
+      className: `typetag ${x.type === "A" ? "ta" : "tb"}`
+    }, x.type)), /*#__PURE__*/React.createElement("div", {
+      className: "drv"
+    }, drv)), /*#__PURE__*/React.createElement("div", {
+      className: "right"
+    }, /*#__PURE__*/React.createElement(Pill, {
+      gate: x.gate
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "chg",
+      style: {
+        color: chgColor(x.chg_pct)
+      }
+    }, x.chg_pct >= 0 ? "▲" : "▼", " ", Math.abs(x.chg_pct).toFixed(2), "%"))), open === id && /*#__PURE__*/React.createElement("div", {
+      className: "detail"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "grid"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "kv"
+    }, /*#__PURE__*/React.createElement("span", null, "종합"), " ", /*#__PURE__*/React.createElement("b", null, x.total ?? "대기")), /*#__PURE__*/React.createElement("div", {
+      className: "kv"
+    }, /*#__PURE__*/React.createElement("span", null, "펀더"), " ", /*#__PURE__*/React.createElement("b", null, x.fundamental ?? "—")), x.type === "A" ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+      className: "kv"
+    }, /*#__PURE__*/React.createElement("span", null, "이격도"), " ", /*#__PURE__*/React.createElement("b", null, x.disparity, "%(", x.disparity_score, ")")), /*#__PURE__*/React.createElement("div", {
+      className: "kv"
+    }, /*#__PURE__*/React.createElement("span", null, "추세건전성"), " ", /*#__PURE__*/React.createElement("b", null, x.trend_health, "/30"))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+      className: "kv"
+    }, /*#__PURE__*/React.createElement("span", null, "52주위치"), " ", /*#__PURE__*/React.createElement("b", null, x.pos_52w, "/20")), /*#__PURE__*/React.createElement("div", {
+      className: "kv"
+    }, /*#__PURE__*/React.createElement("span", null, "낙폭"), " ", /*#__PURE__*/React.createElement("b", null, x.drawdown, "/15"))), /*#__PURE__*/React.createElement("div", {
+      className: "kv"
+    }, /*#__PURE__*/React.createElement("span", null, "모멘텀"), " ", /*#__PURE__*/React.createElement("b", null, x.momentum)), /*#__PURE__*/React.createElement("div", {
+      className: "kv"
+    }, /*#__PURE__*/React.createElement("span", null, "시장위험"), " ", /*#__PURE__*/React.createElement("b", null, x.market_risk)), market === "us" && /*#__PURE__*/React.createElement("div", {
+      className: "kv"
+    }, /*#__PURE__*/React.createElement("span", null, "환율"), " ", /*#__PURE__*/React.createElement("b", null, x.fx_penalty))), /*#__PURE__*/React.createElement("div", null, x.gate === "ok" && "✅ 게이트 통과 — 분할 1차 진입 가능.", x.gate === "hot" && "⚠️ 이격도 과열 영역 — 분할 1차만 보수적으로.", x.gate === "blocked" && "⛔ 점수는 높지만 이격도 미달 — 강제 DCA 30%만, 70%는 회귀까지 대기.", x.gate === "below" && "60점 미달 — 매수 보류.", x.gate === "pending" && "영업이익(펀더멘털) 데이터가 없어 종합점수 산정 대기.")));
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "foot"
+  }, "시세·이격도·게이트는 자동 산출. 한국 펀더멘털은 DART, 미국은 inputs.csv. 매수 전용 단계 분석.")), /*#__PURE__*/React.createElement("div", {
+    className: "tabbar"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: tab === "brief" ? "on" : "",
+    onClick: () => setTab("brief")
+  }, /*#__PURE__*/React.createElement(Newspaper, {
+    size: 20
+  }), " 브리핑 ", /*#__PURE__*/React.createElement("span", {
+    className: "tdash"
+  })), /*#__PURE__*/React.createElement("button", {
+    className: tab === "score" ? "on" : "",
+    onClick: () => setTab("score")
+  }, /*#__PURE__*/React.createElement(BarChart3, {
+    size: 20
+  }), " 점수 ", /*#__PURE__*/React.createElement("span", {
+    className: "tdash"
+  })))));
 }
-ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/_jsx(App, {}));
+ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(App, null));
 
 // 서비스워커 등록 (PWA 설치 가능 + 앱 셸 캐시)
 if ("serviceWorker" in navigator) {
