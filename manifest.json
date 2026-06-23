@@ -1,0 +1,17 @@
+{
+  "name": "매수타이밍 점수 v2.2",
+  "short_name": "v2.2 점수",
+  "description": "한국·미국 시총 상위 종목의 v2.2 매수타이밍 점수를 매일 브리핑",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0b0d",
+  "theme_color": "#0a0b0d",
+  "lang": "ko",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
