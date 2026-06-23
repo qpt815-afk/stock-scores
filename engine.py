@@ -27,6 +27,26 @@ CMC = {
     "kr": "https://companiesmarketcap.com/south-korea/largest-companies-in-south-korea-by-market-cap/",
 }
 
+# 한국 종목 6자리 코드 → 한글 이름 (없는 코드는 영문 그대로 표시)
+KR_NAMES = {
+    "005930": "삼성전자", "005935": "삼성전자우", "000660": "SK하이닉스",
+    "207940": "삼성바이오로직스", "373220": "LG에너지솔루션", "005380": "현대차",
+    "000270": "기아", "068270": "셀트리온", "105560": "KB금융", "055550": "신한지주",
+    "035420": "NAVER", "035720": "카카오", "012330": "현대모비스", "006400": "삼성SDI",
+    "005490": "POSCO홀딩스", "028260": "삼성물산", "051910": "LG화학",
+    "138040": "메리츠금융지주", "086790": "하나금융지주", "329180": "HD현대중공업",
+    "010130": "고려아연", "032830": "삼성생명", "066570": "LG전자",
+    "034020": "두산에너빌리티", "000150": "두산", "012450": "한화에어로스페이스",
+    "096770": "SK이노베이션", "259960": "크래프톤", "011200": "HMM",
+    "316140": "우리금융지주", "000810": "삼성화재", "033780": "KT&G",
+    "402340": "SK스퀘어", "034730": "SK", "042660": "한화오션",
+    "009540": "HD한국조선해양", "267260": "HD현대일렉트릭", "010120": "LS일렉트릭",
+    "298040": "효성중공업", "006800": "미래에셋증권", "018260": "삼성에스디에스",
+    "009150": "삼성전기", "003550": "LG", "000100": "유한양행",
+    "047810": "한국항공우주", "042700": "한미반도체", "017670": "SK텔레콤",
+    "030200": "KT", "015760": "한국전력", "011070": "LG이노텍", "003670": "포스코퓨처엠",
+}
+
 # ── 데이터 수집 ──────────────────────────────────────────────
 def fetch_ranking(market, top=30):
     from bs4 import BeautifulSoup
@@ -210,6 +230,11 @@ def main():
     top = int(os.environ.get("SCORE_TOP", "30"))
     fx = fetch_fx(); inp = load_inputs()
     kr_stocks = fetch_ranking("kr", top)
+    # 한국 종목 이름을 한글로 (표에 없는 코드는 영문 그대로)
+    for s in kr_stocks:
+        kn = KR_NAMES.get(s["ticker"].split(".")[0])
+        if kn:
+            s["name"] = kn
 
     # DART로 한국 영업이익 YoY 자동 채움 (DART_API_KEY 있을 때만).
     # 실패하거나 키가 없으면 inputs.csv 값으로 폴백 → 절대 안 깨짐.
@@ -223,7 +248,7 @@ def main():
             print(f"  ! DART 건너뜀(CSV로 폴백): {e}")
 
     data = {
-        "as_of": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "as_of": datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M"),
         "fx_usdkrw": fx, "fx_penalty": fx_penalty(fx),
         "dart_filled_kr": dart_filled,
         "kr": build_market("kr", top, fx, inp, stocks=kr_stocks),
