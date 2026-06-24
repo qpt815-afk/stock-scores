@@ -11,12 +11,14 @@ v2.2 매수타이밍 점수 엔진 (구현 명세서 v2.2 완전 반영)
 
 [유일한 외부 입력 — inputs.csv]
   op_profit_yoy : 최근 4분기 영업이익 YoY(%)  ← 펀더멘털 점수의 입력 (분기 공시 주기, 매일 안 변함)
-                   · 한국은 DART OpenAPI로 자동화 가능(무료 키), 그 전엔 분기마다 CSV 갱신
+                   · 한국은 DART OpenAPI로 자동화(무료 키), 미국은 us_earnings.py로 자동화(키 불필요)
+                   · 자동 수집 실패 시 CSV 값으로 폴백
   foreign_flow  : sell / neutral / buy        ← 시장위험 가감 (수급, 기본 neutral)
   high_vol, defensive, import_heavy, bonus    ← 선택 플래그 (기본 0)
   값 없으면 시장위험은 중립(기본 12/9)으로, op_profit_yoy 없으면 total=null.
 
-데이터 소스(키 불필요): 랭킹=companiesmarketcap, 시세·일봉·52주=Yahoo chart API
+데이터 소스(키 불필요): 랭킹=companiesmarketcap, 시세·일봉·52주=Yahoo chart API,
+                         미국 영업이익=Yahoo fundamentals-timeseries API
 """
 import requests, json, time, os, csv, datetime
 
@@ -274,7 +276,19 @@ def main():
             print(f"  ! DART 건너뜀(CSV로 폴백): {e}")
 
     kr_rows = build_market("kr", top, fx, inp, stocks=kr_stocks)
-    us_rows = build_market("us", top, fx, inp)
+
+    # 미국 종목: 랭킹을 먼저 받고 영업이익 YoY를 무료로 자동 채움(야후, 키 불필요).
+    # 실패하거나 모듈이 없으면 inputs.csv 값으로 폴백 → 절대 안 깨짐.
+    us_stocks = fetch_ranking("us", top)
+    us_filled = 0
+    try:
+        import us_earnings
+        us_filled = us_earnings.enrich(us_stocks, inp)
+        print(f"US earnings: 미국 {us_filled}종목 영업이익 자동 반영")
+    except Exception as e:
+        print(f"  ! US earnings 건너뜀(CSV로 폴백): {e}")
+
+    us_rows = build_market("us", top, fx, inp, stocks=us_stocks)
     print("시황 지수 수집 중…")
     market = {"kr": market_brief(kr_rows, "kr"), "us": market_brief(us_rows, "us")}
 
@@ -282,6 +296,7 @@ def main():
         "as_of": datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M"),
         "fx_usdkrw": fx, "fx_penalty": fx_penalty(fx),
         "dart_filled_kr": dart_filled,
+        "us_filled": us_filled,
         "market": market,
         "kr": kr_rows,
         "us": us_rows,
