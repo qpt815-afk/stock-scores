@@ -12,13 +12,14 @@ v2.2 매수타이밍 점수 엔진 (구현 명세서 v2.2 완전 반영)
 [유일한 외부 입력 — inputs.csv]
   op_profit_yoy : 최근 4분기 영업이익 YoY(%)  ← 펀더멘털 점수의 입력 (분기 공시 주기, 매일 안 변함)
                    · 한국은 DART OpenAPI로 자동화(무료 키), 미국은 us_earnings.py로 자동화(키 불필요)
+                   · 한국에서 DART가 못 채운 종목(ADR·우선주·일부 금융주)도 us_earnings.py(야후)로 폴백
                    · 자동 수집 실패 시 CSV 값으로 폴백
   foreign_flow  : sell / neutral / buy        ← 시장위험 가감 (수급, 기본 neutral)
   high_vol, defensive, import_heavy, bonus    ← 선택 플래그 (기본 0)
   값 없으면 시장위험은 중립(기본 12/9)으로, op_profit_yoy 없으면 total=null.
 
 데이터 소스(키 불필요): 랭킹=companiesmarketcap, 시세·일봉·52주=Yahoo chart API,
-                         미국 영업이익=Yahoo fundamentals-timeseries API
+                         영업이익=Yahoo fundamentals-timeseries API
 """
 import requests, json, time, os, csv, datetime
 
@@ -275,6 +276,16 @@ def main():
         except Exception as e:
             print(f"  ! DART 건너뜀(CSV로 폴백): {e}")
 
+    # DART가 못 채운 한국 종목(미국 상장 ADR·우선주·일부 금융주 등)은 야후로 폴백.
+    kr_yahoo = 0
+    try:
+        import us_earnings
+        kr_yahoo = us_earnings.enrich(kr_stocks, inp)
+        if kr_yahoo:
+            print(f"Yahoo 폴백: 한국 {kr_yahoo}종목 추가 반영")
+    except Exception as e:
+        print(f"  ! 한국 Yahoo 폴백 건너뜀: {e}")
+
     kr_rows = build_market("kr", top, fx, inp, stocks=kr_stocks)
 
     # 미국 종목: 랭킹을 먼저 받고 영업이익 YoY를 무료로 자동 채움(야후, 키 불필요).
@@ -296,6 +307,7 @@ def main():
         "as_of": datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M"),
         "fx_usdkrw": fx, "fx_penalty": fx_penalty(fx),
         "dart_filled_kr": dart_filled,
+        "yahoo_filled_kr": kr_yahoo,
         "us_filled": us_filled,
         "market": market,
         "kr": kr_rows,
