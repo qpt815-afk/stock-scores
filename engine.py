@@ -208,7 +208,10 @@ def build_row(stock, market, fx, inp):
     return {
         "rank": stock["rank"], "name": stock["name"], "ticker": stock["ticker"], "type": typ,
         "close": round(h["close"], 2), "chg_pct": round(h["chg_pct"], 2),
-        "total": round(total) if total is not None else None,
+        "ma20": round(h["ma20"], 1), "ma60": round(h["ma60"], 1) if h["ma60"] else None,
+        "hi52": round(h["hi52"], 2), "lo52": round(h["lo52"], 2),
+        "disparity": round(disp, 1), "fx_penalty": fxp,
+        **comp, "total": round(total) if total is not None else None,
         "gate": final_gate(typ, total, dsc),
     }
 
@@ -222,6 +225,32 @@ def build_market(market, top, fx, inp, stocks=None):
             print(f"  ! {s['ticker']}: {e}")
         time.sleep(0.4)
     return rows
+
+INDICES = {
+    "kr": [("코스피", "^KS11"), ("코스닥", "^KQ11")],
+    "us": [("S&P 500", "^GSPC"), ("나스닥", "^IXIC")],
+}
+
+def fetch_index(sym):
+    try:
+        j = requests.get(YF.format(sym=sym), headers=UA, timeout=20).json()
+        res = j["chart"]["result"][0]
+        cl = [c for c in res["indicators"]["quote"][0]["close"] if c is not None]
+        if len(cl) < 2: return None
+        return {"val": round(cl[-1], 2), "chg": round((cl[-1]-cl[-2])/cl[-2]*100, 2)}
+    except Exception:
+        return None
+
+def market_brief(rows, market):
+    idx = []
+    for name, sym in INDICES.get(market, []):
+        d = fetch_index(sym)
+        if d: idx.append({"name": name, **d})
+        time.sleep(0.3)
+    chgs = [r["chg_pct"] for r in rows if r.get("chg_pct") is not None]
+    up = sum(1 for c in chgs if c > 0); down = sum(1 for c in chgs if c < 0)
+    avg = round(sum(chgs)/len(chgs), 2) if chgs else 0.0
+    return {"indices": idx, "up": up, "down": down, "avg": avg, "n": len(chgs)}
 
 def main():
     top = int(os.environ.get("SCORE_TOP", "30"))
@@ -244,12 +273,18 @@ def main():
         except Exception as e:
             print(f"  ! DART 건너뜀(CSV로 폴백): {e}")
 
+    kr_rows = build_market("kr", top, fx, inp, stocks=kr_stocks)
+    us_rows = build_market("us", top, fx, inp)
+    print("시황 지수 수집 중…")
+    market = {"kr": market_brief(kr_rows, "kr"), "us": market_brief(us_rows, "us")}
+
     data = {
         "as_of": datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M"),
         "fx_usdkrw": fx, "fx_penalty": fx_penalty(fx),
         "dart_filled_kr": dart_filled,
-        "kr": build_market("kr", top, fx, inp, stocks=kr_stocks),
-        "us": build_market("us", top, fx, inp),
+        "market": market,
+        "kr": kr_rows,
+        "us": us_rows,
     }
     json.dump(data, open("scores.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
     print(f"\n저장: scores.json (KR {len(data['kr'])} · US {len(data['us'])} · 환율 {fx} · 페널티 {data['fx_penalty']})")
