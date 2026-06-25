@@ -78,6 +78,8 @@ def holiday_status():
                       or ("주말" if kd.weekday() >= 5 else "휴장")
         if us_closed:
             un = holidays.financial_holidays("XNYS", years=ud.year).get(ud)
+            if un:
+                un = un.replace(" (observed)", "")   # '관측' 접미 제거 후 한글 매핑
             us_name = (US_KO.get(un, un) if un else None) or ("주말" if ud.weekday() >= 5 else "휴장")
         return kr_closed, kr_name, us_closed, us_name
     except Exception as e:
