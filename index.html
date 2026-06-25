@@ -682,6 +682,7 @@ function App() {
   const [info, setInfo] = useState(false);
   const [candleData, setCandleData] = useState(null);
   const [openIdx, setOpenIdx] = useState(null);
+  const [openBrief, setOpenBrief] = useState(null);
   const ensureCandles = () => {
     if (candleData) return;
     fetch(`${CANDLES_URL}?t=${Date.now()}`).then(r => r.ok ? r.json() : null)
@@ -836,8 +837,11 @@ function App() {
       padding: "0 12px 16px"
     }
   }, byRank.map(x => /*#__PURE__*/React.createElement("div", {
-    className: "brow",
     key: x.rank
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "brow",
+    style: { cursor: "pointer" },
+    onClick: () => { setOpenBrief(openBrief === x.ticker ? null : x.ticker); ensureCandles(); }
   }, /*#__PURE__*/React.createElement("span", {
     className: "brank"
   }, String(x.rank).padStart(2, "0")), /*#__PURE__*/React.createElement("span", {
@@ -856,7 +860,11 @@ function App() {
     style: {
       background: (STATUS[x.gate] || STATUS.pending).color
     }
-  }))))) : /*#__PURE__*/React.createElement("div", {
+  })), openBrief === x.ticker && candleData && candleData.stocks && candleData.stocks[x.ticker] && /*#__PURE__*/React.createElement("div", {
+    style: { padding: "0 12px 8px" }
+  }, /*#__PURE__*/React.createElement(CandleChart, {
+    ohlc: candleData.stocks[x.ticker]
+  })))))) : /*#__PURE__*/React.createElement("div", {
     className: "scroll",
     key: "s" + market + filter
   }, info && /*#__PURE__*/React.createElement("div", {
