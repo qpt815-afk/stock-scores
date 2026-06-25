@@ -499,6 +499,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 
 // ⬇⬇⬇ 형석님 저장소의 scores.json 주소
 const SCORES_URL = "https://raw.githubusercontent.com/qpt815-afk/stock-scores/main/scores.json";
+const CANDLES_URL = "https://raw.githubusercontent.com/qpt815-afk/stock-scores/main/candles.json";
 
 // 인라인 아이콘
 const Svg = ({
@@ -638,6 +639,37 @@ const Pill = ({
     }
   }, s.icon, " ", s.label);
 };
+function CandleChart({ ohlc }) {
+  if (!ohlc || ohlc.length < 2)
+    return /*#__PURE__*/React.createElement("div", { className: "muted", style: { padding: "12px 2px", fontSize: "12px" } }, "차트 데이터가 아직 없어요");
+  const W = 320, H = 150, pT = 8, pB = 14, pL = 2, pR = 2;
+  const cl = ohlc.map(d => d[3]);
+  const sma = (n, i) => { if (i < n - 1) return null; let s = 0; for (let k = i - n + 1; k <= i; k++) s += cl[k]; return s / n; };
+  const ma20 = cl.map((_, i) => sma(20, i)), ma60 = cl.map((_, i) => sma(60, i));
+  let hi = -Infinity, lo = Infinity;
+  ohlc.forEach(d => { if (d[1] > hi) hi = d[1]; if (d[2] < lo) lo = d[2]; });
+  [...ma20, ...ma60].forEach(v => { if (v != null) { if (v > hi) hi = v; if (v < lo) lo = v; } });
+  const rng = (hi - lo) || 1, n = ohlc.length, cw = (W - pL - pR) / n;
+  const X = i => pL + i * cw + cw / 2;
+  const Y = v => pT + (hi - v) / rng * (H - pT - pB);
+  const UP = "#ec4d4d", DOWN = "#4d82e6";
+  const cells = ohlc.map((d, i) => {
+    const o = d[0], h = d[1], l = d[2], c = d[3], col = c >= o ? UP : DOWN;
+    const bw = Math.max(1, cw * 0.62), x = X(i), yo = Y(o), yc = Y(c);
+    return /*#__PURE__*/React.createElement("g", { key: i },
+      /*#__PURE__*/React.createElement("line", { x1: x, y1: Y(h), x2: x, y2: Y(l), stroke: col, strokeWidth: 1 }),
+      /*#__PURE__*/React.createElement("rect", { x: x - bw / 2, y: Math.min(yo, yc), width: bw, height: Math.max(1, Math.abs(yo - yc)), fill: col }));
+  });
+  const line = (arr, col) => /*#__PURE__*/React.createElement("polyline", { points: arr.map((v, i) => v == null ? null : X(i).toFixed(1) + "," + Y(v).toFixed(1)).filter(Boolean).join(" "), fill: "none", stroke: col, strokeWidth: 1.3, opacity: 0.9 });
+  return /*#__PURE__*/React.createElement("div", { style: { margin: "6px 0 10px" } },
+    /*#__PURE__*/React.createElement("svg", { viewBox: "0 0 " + W + " " + H, width: "100%", style: { display: "block" } },
+      cells, line(ma20, "#d2a64e"), line(ma60, "#9b8cff")),
+    /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: "12px", fontSize: "10.5px", color: "var(--faint)", marginTop: "3px", justifyContent: "flex-end" } },
+      /*#__PURE__*/React.createElement("span", { style: { color: "#d2a64e" } }, "20일선"),
+      /*#__PURE__*/React.createElement("span", { style: { color: "#9b8cff" } }, "60일선"),
+      /*#__PURE__*/React.createElement("span", null, "최근 " + ohlc.length + "일 · 빨강↑/파랑↓")));
+}
+
 function App() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -648,6 +680,14 @@ function App() {
   const [sortKey, setSortKey] = useState("total");
   const [open, setOpen] = useState(null);
   const [info, setInfo] = useState(false);
+  const [candleData, setCandleData] = useState(null);
+  const [openIdx, setOpenIdx] = useState(null);
+  const ensureCandles = () => {
+    if (candleData) return;
+    fetch(`${CANDLES_URL}?t=${Date.now()}`).then(r => r.ok ? r.json() : null)
+      .then(d => setCandleData(d || { stocks: {}, indices: {} }))
+      .catch(() => setCandleData({ stocks: {}, indices: {} }));
+  };
   const load = () => {
     setLoading(true);
     setErr(null);
@@ -752,7 +792,9 @@ function App() {
     className: "mkt-idx"
   }, mb.indices.map(ix => /*#__PURE__*/React.createElement("div", {
     className: "ix",
-    key: ix.name
+    key: ix.name,
+    style: { cursor: "pointer" },
+    onClick: () => { setOpenIdx(openIdx === ix.name ? null : ix.name); ensureCandles(); }
   }, /*#__PURE__*/React.createElement("span", {
     className: "ix-n"
   }, ix.name), /*#__PURE__*/React.createElement("span", {
@@ -762,7 +804,9 @@ function App() {
     style: {
       color: chgColor(ix.chg)
     }
-  }, ix.chg >= 0 ? "▲" : "▼", " ", Math.abs(ix.chg).toFixed(2), "%")))), /*#__PURE__*/React.createElement("div", {
+  }, ix.chg >= 0 ? "▲" : "▼", " ", Math.abs(ix.chg).toFixed(2), "%")))), openIdx && candleData && candleData.indices && candleData.indices[openIdx] && /*#__PURE__*/React.createElement("div", {
+    style: { padding: "0 14px" }
+  }, /*#__PURE__*/React.createElement("div", { style: { fontSize: "12px", color: "var(--muted)", margin: "2px 0 2px" } }, openIdx, " · 최근 6개월"), /*#__PURE__*/React.createElement(CandleChart, { ohlc: candleData.indices[openIdx] })), /*#__PURE__*/React.createElement("div", {
     className: "mkt-breadth"
   }, "상위 ", mb.n, "종목 중 ", /*#__PURE__*/React.createElement("b", {
     style: {
@@ -884,7 +928,7 @@ function App() {
       key: id
     }, /*#__PURE__*/React.createElement("div", {
       className: "srow",
-      onClick: () => setOpen(open === id ? null : id)
+      onClick: () => { setOpen(open === id ? null : id); ensureCandles(); }
     }, /*#__PURE__*/React.createElement("span", {
       className: "bar",
       style: {
@@ -920,7 +964,7 @@ function App() {
       className: "detail"
     }, /*#__PURE__*/React.createElement("div", {
       className: "dtop"
-    }, "종합 ", x.total ?? "—", "점 · 현재가 ", cur, fmt(x.close), " · 등락 ", x.chg_pct >= 0 ? "+" : "", x.chg_pct, "%"), x.total != null && /*#__PURE__*/React.createElement("div", {
+    }, "종합 ", x.total ?? "—", "점 · 현재가 ", cur, fmt(x.close), " · 등락 ", x.chg_pct >= 0 ? "+" : "", x.chg_pct, "%"), candleData && candleData.stocks && candleData.stocks[x.ticker] && /*#__PURE__*/React.createElement(CandleChart, { ohlc: candleData.stocks[x.ticker] }), x.total != null && /*#__PURE__*/React.createElement("div", {
       className: "dgrid"
     }, metrics.map(([k, v, mx]) => /*#__PURE__*/React.createElement("div", {
       className: "kv",
