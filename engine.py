@@ -18,6 +18,7 @@ v2.2 매수타이밍 점수 엔진 (구현 명세서 v2.2 완전 반영)
   high_vol, defensive, import_heavy, bonus    ← 선택 플래그 (기본 0)
   값 없으면 시장위험은 중립(기본 12/9)으로, op_profit_yoy 없으면 total=null.
 
+휴장일: holidays 라이브러리로 한국(KRX)·미국(NYSE) 휴장을 감지해 안내 문구를 scores.json에 넣음.
 데이터 소스(키 불필요): 랭킹=companiesmarketcap, 시세·일봉·52주=Yahoo chart API,
                          영업이익=Yahoo fundamentals-timeseries API
 """
@@ -28,6 +29,15 @@ YF = "https://query1.finance.yahoo.com/v8/finance/chart/{sym}?range=1y&interval=
 CMC = {
     "us": "https://companiesmarketcap.com/usa/largest-companies-in-the-usa-by-market-cap/",
     "kr": "https://companiesmarketcap.com/south-korea/largest-companies-in-south-korea-by-market-cap/",
+}
+
+# 미국 주요 휴장일 영문 → 한글
+US_KO = {
+    "New Year's Day": "신정", "Martin Luther King Jr. Day": "마틴 루터 킹 데이",
+    "Washington's Birthday": "워싱턴 탄생일", "Good Friday": "성금요일",
+    "Memorial Day": "메모리얼 데이", "Juneteenth National Independence Day": "준틴스",
+    "Independence Day": "독립기념일", "Labor Day": "노동절",
+    "Thanksgiving Day": "추수감사절", "Christmas Day": "크리스마스",
 }
 
 # 한국 종목 6자리 코드 → 한글 이름 (없는 코드는 영문 그대로 표시)
@@ -49,6 +59,37 @@ KR_NAMES = {
     "047810": "한국항공우주", "042700": "한미반도체", "017670": "SK텔레콤",
     "030200": "KT", "015760": "한국전력", "011070": "LG이노텍", "003670": "포스코퓨처엠",
 }
+
+# ── 휴장일 감지 ──────────────────────────────────────────────
+def holiday_status():
+    """오늘 한국(KRX)·미국(NYSE) 증시 휴장 여부 → (kr_closed, kr_name, us_closed, us_name).
+    holidays 라이브러리/네트워크 문제 시 '열림'으로 간주(안전·파이프라인 안 깨짐)."""
+    try:
+        import holidays
+        from zoneinfo import ZoneInfo
+        kd = datetime.datetime.now(ZoneInfo("Asia/Seoul")).date()
+        ud = datetime.datetime.now(ZoneInfo("America/New_York")).date()
+        kr_cal = holidays.country_holidays("KR", years=kd.year, language="ko")
+        us_cal = holidays.financial_holidays("XNYS", years=ud.year)
+        kr_name = kr_cal.get(kd) or ("주말" if kd.weekday() >= 5 else None)
+        un = us_cal.get(ud)
+        us_name = (US_KO.get(un, un) if un else None) or ("주말" if ud.weekday() >= 5 else None)
+        return (kr_name is not None), kr_name, (us_name is not None), us_name
+    except Exception as e:
+        print(f"  ! 휴장 확인 건너뜀: {e}")
+        return False, None, False, None
+
+def notices(kr_c, kr_n, us_c, us_n):
+    """returns (as_of용 짧은 접미, 전체 안내문)."""
+    short, full = [], []
+    if kr_c:
+        short.append(f"한국장 휴장({kr_n})")
+        full.append(f"🛑 오늘은 한국 증시 휴장일({kr_n})이라 한국 종목 시세가 갱신되지 않습니다")
+    if us_c:
+        short.append(f"미국장 휴장({us_n})")
+        full.append(f"🛑 오늘은 미국 증시 휴장일({us_n})이라 미국 종목 시세가 갱신되지 않습니다")
+    s = ("🛑 " + " · ".join(short)) if short else ""
+    return s, "   ".join(full)
 
 # ── 데이터 수집 ──────────────────────────────────────────────
 def fetch_ranking(market, top=30):
@@ -303,12 +344,22 @@ def main():
     print("시황 지수 수집 중…")
     market = {"kr": market_brief(kr_rows, "kr"), "us": market_brief(us_rows, "us")}
 
+    # 휴장일 감지 → 갱신 시각 옆 안내 + 구조화 필드
+    kr_closed, kr_hol, us_closed, us_hol = holiday_status()
+    suffix, holiday_notice = notices(kr_closed, kr_hol, us_closed, us_hol)
+    if holiday_notice:
+        print(holiday_notice)
+    stamp = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M")
+
     data = {
-        "as_of": datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M"),
+        "as_of": stamp + (("   " + suffix) if suffix else ""),
         "fx_usdkrw": fx, "fx_penalty": fx_penalty(fx),
         "dart_filled_kr": dart_filled,
         "yahoo_filled_kr": kr_yahoo,
         "us_filled": us_filled,
+        "holiday_notice": holiday_notice,
+        "kr_closed": kr_closed, "kr_holiday": kr_hol,
+        "us_closed": us_closed, "us_holiday": us_hol,
         "market": market,
         "kr": kr_rows,
         "us": us_rows,
