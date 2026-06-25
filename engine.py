@@ -63,18 +63,23 @@ KR_NAMES = {
 # ── 휴장일 감지 ──────────────────────────────────────────────
 def holiday_status():
     """오늘 한국(KRX)·미국(NYSE) 증시 휴장 여부 → (kr_closed, kr_name, us_closed, us_name).
-    holidays 라이브러리/네트워크 문제 시 '열림'으로 간주(안전·파이프라인 안 깨짐)."""
+    개·휴장 판정은 거래소 공식 캘린더(exchange_calendars)로 정확히(제헌절 개장·연말 휴장 등 반영),
+    휴장 '이름'은 holidays에서 가져옴. 문제 시 '열림'으로 간주(안전·파이프라인 안 깨짐)."""
     try:
-        import holidays
+        import exchange_calendars as xc, holidays, pandas as pd
         from zoneinfo import ZoneInfo
         kd = datetime.datetime.now(ZoneInfo("Asia/Seoul")).date()
         ud = datetime.datetime.now(ZoneInfo("America/New_York")).date()
-        kr_cal = holidays.country_holidays("KR", years=kd.year, language="ko")
-        us_cal = holidays.financial_holidays("XNYS", years=ud.year)
-        kr_name = kr_cal.get(kd) or ("주말" if kd.weekday() >= 5 else None)
-        un = us_cal.get(ud)
-        us_name = (US_KO.get(un, un) if un else None) or ("주말" if ud.weekday() >= 5 else None)
-        return (kr_name is not None), kr_name, (us_name is not None), us_name
+        kr_closed = not xc.get_calendar("XKRX").is_session(pd.Timestamp(kd))
+        us_closed = not xc.get_calendar("XNYS").is_session(pd.Timestamp(ud))
+        kr_name = us_name = None
+        if kr_closed:
+            kr_name = holidays.country_holidays("KR", years=kd.year, language="ko").get(kd) \
+                      or ("주말" if kd.weekday() >= 5 else "휴장")
+        if us_closed:
+            un = holidays.financial_holidays("XNYS", years=ud.year).get(ud)
+            us_name = (US_KO.get(un, un) if un else None) or ("주말" if ud.weekday() >= 5 else "휴장")
+        return kr_closed, kr_name, us_closed, us_name
     except Exception as e:
         print(f"  ! 휴장 확인 건너뜀: {e}")
         return False, None, False, None
