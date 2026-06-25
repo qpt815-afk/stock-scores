@@ -616,6 +616,7 @@ function App() {
   const [tab, setTab] = useState("brief");
   const [market, setMarket] = useState("kr");
   const [filter, setFilter] = useState("all");
+  const [sortKey, setSortKey] = useState("total");
   const [open, setOpen] = useState(null);
   const [info, setInfo] = useState(false);
   const load = () => {
@@ -643,7 +644,7 @@ function App() {
   let scored = raw.slice();
   if (filter === "buy") scored = scored.filter(x => isBuyable(x.gate));
   if (filter === "hold") scored = scored.filter(x => !isBuyable(x.gate));
-  scored.sort((a, b) => (b.total ?? -1) - (a.total ?? -1));
+  scored.sort((a, b) => (b[sortKey] ?? -1) - (a[sortKey] ?? -1));
   return /*#__PURE__*/React.createElement("div", {
     className: "app-page"
   }, /*#__PURE__*/React.createElement("div", {
@@ -824,6 +825,22 @@ function App() {
     key: k,
     className: `chip ${filter === k ? "on" : ""}`,
     onClick: () => setFilter(k)
+  }, l))), /*#__PURE__*/React.createElement("div", {
+    className: "chips",
+    style: {
+      flexWrap: "wrap",
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "muted",
+    style: {
+      fontSize: "11px",
+      marginRight: "4px"
+    }
+  }, "정렬"), [["total", "종합"], ["fundamental", "펀더"], ["disparity_score", "이격도"], ["alignment", "정배열"], ["volume", "거래량"], ["momentum", "모멘텀"], ["market_risk", "시장위험"], ["pos_52w", "52주위치"], ["drawdown", "낙폭"]].map(([k, l]) => /*#__PURE__*/React.createElement("button", {
+    key: k,
+    className: `chip ${sortKey === k ? "on" : ""}`,
+    onClick: () => setSortKey(k)
   }, l))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "2px 12px 8px"
