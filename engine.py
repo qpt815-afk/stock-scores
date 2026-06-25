@@ -330,7 +330,7 @@ def market_brief(rows, market, idx_candles=None):
     return {"indices": idx, "up": up, "down": down, "avg": avg, "n": len(chgs)}
 
 def main():
-    top = int(os.environ.get("SCORE_TOP", "30"))
+    top = int(os.environ.get("SCORE_TOP", "50"))
     fx = fetch_fx(); inp = load_inputs()
     kr_stocks = fetch_ranking("kr", top)
     # 한국 종목 이름을 한글로 (표에 없는 코드는 영문 그대로)
