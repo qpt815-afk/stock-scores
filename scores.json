@@ -1,6 +1,6 @@
 {
-  "as_of": "2026-06-25 18:22",
-  "fx_usdkrw": 1540.62,
+  "as_of": "2026-06-25 21:40",
+  "fx_usdkrw": 1542.85,
   "fx_penalty": -12,
   "dart_filled_kr": 38,
   "yahoo_filled_kr": 11,
@@ -201,11 +201,11 @@
       "fundamental": 26,
       "disparity_score": 7,
       "alignment": 10,
-      "volume": 5,
-      "trend_health": 22,
+      "volume": 8,
+      "trend_health": 25,
       "momentum": 12,
       "market_risk": 14,
-      "total": 74,
+      "total": 77,
       "gate": "ok"
     },
     {
@@ -621,11 +621,11 @@
       "fundamental": 35,
       "disparity_score": 12,
       "alignment": 5,
-      "volume": 3,
-      "trend_health": 20,
+      "volume": 5,
+      "trend_health": 22,
       "momentum": 12,
       "market_risk": 12,
-      "total": 79,
+      "total": 81,
       "gate": "ok"
     },
     {
