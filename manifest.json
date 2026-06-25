@@ -9,6 +9,15 @@
   "background_color": "#0a0b0d",
   "theme_color": "#0a0b0d",
   "lang": "ko",
+  "id": "/",
+  "prefer_related_applications": false,
+  "related_applications": [
+    {
+      "platform": "play",
+      "id": "com.havacompany.maesuscouter",
+      "url": "https://play.google.com/store/apps/details?id=com.havacompany.maesuscouter"
+    }
+  ],
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
