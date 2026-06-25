@@ -110,7 +110,7 @@ def fetch_ranking(market, top=30):
         if len(out) >= top: break
     return out
 
-def fetch_history(sym):
+def fetch_history(sym, candle_days=120):
     res = requests.get(YF.format(sym=sym), headers=UA, timeout=20).json()["chart"]["result"][0]
     q = res["indicators"]["quote"][0]
     closes = [c for c in q["close"] if c is not None]
@@ -118,6 +118,16 @@ def fetch_history(sym):
     if len(closes) < 21: return None
     meta = res.get("meta", {})
     ma = lambda n: sum(closes[-n:])/n
+    # 캔들차트용 OHLC (시·고·저·종 모두 있는 날만, 최근 candle_days개)
+    o, hi, lo, cl = q.get("open", []), q.get("high", []), q.get("low", []), q["close"]
+    ohlc = []
+    for i in range(len(cl)):
+        oo = o[i] if i < len(o) else None
+        hh = hi[i] if i < len(hi) else None
+        ll = lo[i] if i < len(lo) else None
+        cc = cl[i]
+        if None in (oo, hh, ll, cc): continue
+        ohlc.append([round(oo, 2), round(hh, 2), round(ll, 2), round(cc, 2)])
     return {
         "close": closes[-1], "prev": closes[-2],
         "chg_pct": (closes[-1]-closes[-2])/closes[-2]*100,
@@ -126,6 +136,7 @@ def fetch_history(sym):
         "lo52": meta.get("fiftyTwoWeekLow") or min(closes),
         "vol": vols[-1] if vols else None,
         "avg_vol20": (sum(vols[-20:])/20) if len(vols) >= 20 else None,
+        "ohlc": ohlc[-candle_days:],
     }
 
 def fetch_fx():
@@ -221,9 +232,11 @@ def final_gate(typ, total, dsc):
     return "ok"
 
 # ── 한 종목 ─────────────────────────────────────────────────
-def build_row(stock, market, fx, inp):
+def build_row(stock, market, fx, inp, candles=None):
     h = fetch_history(stock["ticker"])
     if not h: return None
+    if candles is not None and h.get("ohlc"):
+        candles[stock["ticker"]] = h["ohlc"]
     c = inp.get(stock["ticker"], {})
     yoy = float(c["op_profit_yoy"]) if c.get("op_profit_yoy") not in (None, "", "NA") else None
     flow = c.get("foreign_flow", "neutral") or "neutral"
@@ -266,11 +279,11 @@ def build_row(stock, market, fx, inp):
         "gate": final_gate(typ, total, dsc),
     }
 
-def build_market(market, top, fx, inp, stocks=None):
+def build_market(market, top, fx, inp, stocks=None, candles=None):
     rows = []
     for s in (stocks or fetch_ranking(market, top)):
         try:
-            r = build_row(s, market, fx, inp)
+            r = build_row(s, market, fx, inp, candles)
             if r: rows.append(r)
         except Exception as e:
             print(f"  ! {s['ticker']}: {e}")
@@ -282,21 +295,34 @@ INDICES = {
     "us": [("S&P 500", "^GSPC"), ("나스닥", "^IXIC")],
 }
 
-def fetch_index(sym):
+def fetch_index(sym, candle_days=120):
     try:
         j = requests.get(YF.format(sym=sym), headers=UA, timeout=20).json()
         res = j["chart"]["result"][0]
-        cl = [c for c in res["indicators"]["quote"][0]["close"] if c is not None]
+        q = res["indicators"]["quote"][0]
+        cl = [c for c in q["close"] if c is not None]
         if len(cl) < 2: return None
-        return {"val": round(cl[-1], 2), "chg": round((cl[-1]-cl[-2])/cl[-2]*100, 2)}
+        o, hi, lo, c2 = q.get("open", []), q.get("high", []), q.get("low", []), q["close"]
+        ohlc = []
+        for i in range(len(c2)):
+            oo = o[i] if i < len(o) else None
+            hh = hi[i] if i < len(hi) else None
+            ll = lo[i] if i < len(lo) else None
+            cc = c2[i]
+            if None in (oo, hh, ll, cc): continue
+            ohlc.append([round(oo, 2), round(hh, 2), round(ll, 2), round(cc, 2)])
+        return {"val": round(cl[-1], 2), "chg": round((cl[-1]-cl[-2])/cl[-2]*100, 2), "ohlc": ohlc[-candle_days:]}
     except Exception:
         return None
 
-def market_brief(rows, market):
+def market_brief(rows, market, idx_candles=None):
     idx = []
     for name, sym in INDICES.get(market, []):
         d = fetch_index(sym)
-        if d: idx.append({"name": name, **d})
+        if d:
+            idx.append({"name": name, "val": d["val"], "chg": d["chg"]})
+            if idx_candles is not None and d.get("ohlc"):
+                idx_candles[name] = d["ohlc"]
         time.sleep(0.3)
     chgs = [r["chg_pct"] for r in rows if r.get("chg_pct") is not None]
     up = sum(1 for c in chgs if c > 0); down = sum(1 for c in chgs if c < 0)
@@ -334,7 +360,8 @@ def main():
     except Exception as e:
         print(f"  ! 한국 Yahoo 폴백 건너뜀: {e}")
 
-    kr_rows = build_market("kr", top, fx, inp, stocks=kr_stocks)
+    candles = {}  # 캔들차트용 종목 OHLC 모음 (candles.json)
+    kr_rows = build_market("kr", top, fx, inp, stocks=kr_stocks, candles=candles)
 
     # 미국 종목: 랭킹을 먼저 받고 영업이익 YoY를 무료로 자동 채움(야후, 키 불필요).
     # 실패하거나 모듈이 없으면 inputs.csv 값으로 폴백 → 절대 안 깨짐.
@@ -347,9 +374,10 @@ def main():
     except Exception as e:
         print(f"  ! US earnings 건너뜀(CSV로 폴백): {e}")
 
-    us_rows = build_market("us", top, fx, inp, stocks=us_stocks)
+    us_rows = build_market("us", top, fx, inp, stocks=us_stocks, candles=candles)
     print("시황 지수 수집 중…")
-    market = {"kr": market_brief(kr_rows, "kr"), "us": market_brief(us_rows, "us")}
+    idx_candles = {}  # 캔들차트용 지수 OHLC 모음
+    market = {"kr": market_brief(kr_rows, "kr", idx_candles), "us": market_brief(us_rows, "us", idx_candles)}
 
     # 휴장일 감지 → 갱신 시각 옆 안내 + 구조화 필드
     kr_closed, kr_hol, us_closed, us_hol = holiday_status()
@@ -373,6 +401,11 @@ def main():
     }
     json.dump(data, open("scores.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
     print(f"\n저장: scores.json (KR {len(data['kr'])} · US {len(data['us'])} · 환율 {fx} · 페널티 {data['fx_penalty']})")
+
+    # 캔들차트용 데이터 — 지연 로드용 별도 파일(용량 절약 위해 압축 저장)
+    candles_data = {"as_of": stamp, "stocks": candles, "indices": idx_candles}
+    json.dump(candles_data, open("candles.json", "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+    print(f"저장: candles.json (종목 {len(candles)} · 지수 {len(idx_candles)})")
 
 if __name__ == "__main__":
     main()
