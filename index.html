@@ -592,28 +592,34 @@ const AlertCircle = p => /*#__PURE__*/React.createElement(Svg, p, /*#__PURE__*/R
   y2: "16"
 }));
 const STATUS = {
-  ok: {
-    label: "매수가능",
-    icon: "✅",
+  S: {
+    label: "강력매수",
+    icon: "🔥",
     color: "#3ecf8e",
-    bg: "rgba(62,207,142,.12)"
+    bg: "rgba(62,207,142,.16)"
+  },
+  A: {
+    label: "매수",
+    icon: "✅",
+    color: "#46b387",
+    bg: "rgba(62,207,142,.10)"
+  },
+  B: {
+    label: "관심",
+    icon: "•",
+    color: "#7e8aa0",
+    bg: "rgba(126,138,160,.10)"
   },
   hot: {
-    label: "과열주의",
+    label: "과열",
     icon: "⚠️",
-    color: "#e3ad44",
-    bg: "rgba(227,173,68,.12)"
-  },
-  blocked: {
-    label: "게이트차단",
-    icon: "⛔",
-    color: "#e2694e",
-    bg: "rgba(226,105,78,.12)"
+    color: "#e3924e",
+    bg: "rgba(227,146,78,.12)"
   },
   below: {
-    label: "60 미달",
+    label: "관망",
     icon: "·",
-    color: "#777c85",
+    color: "#6b7280",
     bg: "rgba(120,126,135,.08)"
   },
   pending: {
@@ -623,7 +629,7 @@ const STATUS = {
     bg: "rgba(120,126,135,.06)"
   }
 };
-const isBuyable = g => g === "ok" || g === "hot";
+const isBuyable = g => g === "S" || g === "A";
 const chgColor = c => c >= 0 ? "#ec4d4d" : "#4d82e6";
 const fmt = n => typeof n === "number" ? n.toLocaleString() : n;
 const typeLabel = t => t === "A" ? "추세추종형" : "역추세형(조정)";
@@ -709,7 +715,7 @@ function App() {
   const mb = data && data.market ? data.market[market] : null;
   const byRank = raw.slice().sort((a, b) => a.rank - b.rank);
   const counts = raw.reduce((a, x) => (a[x.gate] = (a[x.gate] || 0) + 1, a), {});
-  const buyN = (counts.ok || 0) + (counts.hot || 0);
+  const buyN = (counts.S || 0) + (counts.A || 0);
   const buyList = raw.filter(x => isBuyable(x.gate)).sort((a, b) => (b.total ?? 0) - (a.total ?? 0));
   let scored = raw.slice();
   if (filter === "buy") scored = scored.filter(x => isBuyable(x.gate));
@@ -725,7 +731,7 @@ function App() {
     className: "hd-top"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "kicker"
-  }, tab === "brief" ? "Daily Market Brief · v2.2" : "Buy-Timing Score · v2.2"), /*#__PURE__*/React.createElement("div", {
+  }, tab === "brief" ? "Daily Market Brief · v2.3" : "Buy-Timing Score · v2.3"), /*#__PURE__*/React.createElement("div", {
     className: "title"
   }, tab === "brief" ? "오늘의 브리핑" : "매수타이밍 점수"), /*#__PURE__*/React.createElement("div", {
     className: "date"
@@ -823,9 +829,9 @@ function App() {
     className: "brief-h"
   }, /*#__PURE__*/React.createElement("h3", null, "오늘의 요약"), /*#__PURE__*/React.createElement("span", {
     className: "vtag"
-  }, "v2.2")), /*#__PURE__*/React.createElement("div", {
+  }, "v2.3")), /*#__PURE__*/React.createElement("div", {
     className: "brief-b"
-  }, market === "kr" ? /*#__PURE__*/React.createElement(React.Fragment, null, "환율 ", /*#__PURE__*/React.createElement("b", null, fmt(data.fx_usdkrw), "원"), " · 한국 상위 ", byRank.length, "종목 중 게이트 통과 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), ". 종합점수가 높아도 과열 구간이면 보류예요.") : /*#__PURE__*/React.createElement(React.Fragment, null, "환율 ", /*#__PURE__*/React.createElement("b", null, fmt(data.fx_usdkrw), "원"), "이라 미국주 환율 페널티 적용 중. 게이트 통과 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), ".")), buyList.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, market === "kr" ? /*#__PURE__*/React.createElement(React.Fragment, null, "환율 ", /*#__PURE__*/React.createElement("b", null, fmt(data.fx_usdkrw), "원"), " · 한국 상위 ", byRank.length, "종목 중 매수가능 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), " (강력매수+매수). 절대평가 등급제 — 점수가 높아도 과열이면 제외돼요.") : /*#__PURE__*/React.createElement(React.Fragment, null, "환율 ", /*#__PURE__*/React.createElement("b", null, fmt(data.fx_usdkrw), "원"), "이라 미국주 환율 페널티 적용 중. 매수가능 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), ".")), buyList.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "buychips"
   }, buyList.slice(0, 8).map(x => /*#__PURE__*/React.createElement("span", {
     className: "buychip",
@@ -869,17 +875,17 @@ function App() {
     key: "s" + market + filter
   }, info && /*#__PURE__*/React.createElement("div", {
     className: "info"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("b", null, "유형 A"), " (추세추종형): 펀더 35 · 추세건전성 30 (이격도 12 + 정배열 10 + 거래량 8) · 모멘텀 15 · 시장위험 20"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("b", null, "유형 A"), " (추세추종형): 펀더 35 · 추세건전성 30 (이격도 12 + 정배열 10 + 거래량 8) · 모멘텀 11 · 시장위험 20"), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 6
     }
-  }, /*#__PURE__*/React.createElement("b", null, "유형 B"), " (역추세형): 펀더 30 · 52주위치 20 · 낙폭 15 · 모멘텀 20 · 시장위험 15"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("b", null, "유형 B"), " (역추세형): 펀더 30 · 52주위치 20 · 낙폭 15 · 모멘텀 13 · 시장위험 15"), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 6
     }
-  }, /*#__PURE__*/React.createElement("b", null, "게이트"), " = 종합 60점 이상 + (유형 A는) 이격도 7점 이상. 미국 종목은 환율 페널티 차감."), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("b", null, "등급"), " = 종합점수 절대평가. 🔥강력매수 75+ · ✅매수 70+ · •관심 62+ · 그 미만 관망. 유형A가 이격도 과열이면 매수 제외, 미국은 환율 페널티 차감."), /*#__PURE__*/React.createElement("div", {
     className: "leg"
-  }, ["ok", "hot", "blocked", "below"].map(g => /*#__PURE__*/React.createElement("span", {
+  }, ["S", "A", "B", "hot", "below"].map(g => /*#__PURE__*/React.createElement("span", {
     key: g
   }, /*#__PURE__*/React.createElement("i", {
     className: "ldot",
@@ -888,7 +894,7 @@ function App() {
     }
   }), STATUS[g].label)))), /*#__PURE__*/React.createElement("div", {
     className: "summary"
-  }, ["ok", "hot", "blocked", "below"].map(g => /*#__PURE__*/React.createElement("div", {
+  }, ["S", "A", "B", "below"].map(g => /*#__PURE__*/React.createElement("div", {
     className: "stat",
     key: g
   }, /*#__PURE__*/React.createElement("div", {
@@ -900,9 +906,9 @@ function App() {
     className: "l"
   }, STATUS[g].label)))), /*#__PURE__*/React.createElement("div", {
     className: "ctx"
-  }, market === "kr" ? /*#__PURE__*/React.createElement(React.Fragment, null, "오늘 매수가능 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), ". 게이트 통과한 종목만 분할 1차 진입 대상.") : /*#__PURE__*/React.createElement(React.Fragment, null, "환율 페널티 적용 중 (", fmt(data.fx_usdkrw), "원). 매수가능 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), ".")), /*#__PURE__*/React.createElement("div", {
+  }, market === "kr" ? /*#__PURE__*/React.createElement(React.Fragment, null, "오늘 매수가능 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), " (강력매수+매수). 절대평가 등급제라 좋은 날도 소수만 통과해요.") : /*#__PURE__*/React.createElement(React.Fragment, null, "환율 페널티 적용 중 (", fmt(data.fx_usdkrw), "원). 매수가능 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), ".")), /*#__PURE__*/React.createElement("div", {
     className: "chips"
-  }, [["all", "전체"], ["buy", "✅ 매수가능"], ["hold", "보류"]].map(([k, l]) => /*#__PURE__*/React.createElement("button", {
+  }, [["all", "전체"], ["buy", "✅ 매수가능"], ["hold", "관심·관망"]].map(([k, l]) => /*#__PURE__*/React.createElement("button", {
     key: k,
     className: `chip ${filter === k ? "on" : ""}`,
     onClick: () => setFilter(k)
@@ -931,7 +937,7 @@ function App() {
     const s = STATUS[x.gate] || STATUS.pending;
     const star = x.disparity_score === 12 && x.disparity < 0;
     const drv = x.total == null ? `유형${x.type} · 데이터대기` : x.type === "A" ? `유형A · 이격도 ${x.disparity_score}점 (${x.disparity}%)` : `유형B · 낙폭 ${x.drawdown}/15 · 52주 ${x.pos_52w}/20`;
-    const metrics = x.type === "A" ? [["펀더", x.fundamental, 35], ["이격도", x.disparity_score, 12], ["정배열", x.alignment, 10], ["거래량", x.volume, 8], ["모멘텀", x.momentum, 15], ["시장위험", x.market_risk, 20]] : [["펀더", x.fundamental, 30], ["52주위치", x.pos_52w, 20], ["낙폭", x.drawdown, 15], ["모멘텀", x.momentum, 20], ["시장위험", x.market_risk, 15]];
+    const metrics = x.type === "A" ? [["펀더", x.fundamental, 35], ["이격도", x.disparity_score, 12], ["정배열", x.alignment, 10], ["거래량", x.volume, 8], ["모멘텀", x.momentum, 11], ["시장위험", x.market_risk, 20]] : [["펀더", x.fundamental, 30], ["52주위치", x.pos_52w, 20], ["낙폭", x.drawdown, 15], ["모멘텀", x.momentum, 13], ["시장위험", x.market_risk, 15]];
     return /*#__PURE__*/React.createElement("div", {
       key: id
     }, /*#__PURE__*/React.createElement("div", {
@@ -989,10 +995,10 @@ function App() {
       className: "v"
     }, x.fx_penalty))), /*#__PURE__*/React.createElement("div", {
       className: "dnote"
-    }, x.gate === "ok" && "✅ 게이트 통과 — 분할 1차 진입 가능한 구간.", x.gate === "hot" && "⚠️ 과열 구간 — 분할 1차만 보수적으로.", x.gate === "blocked" && "⛔ 종합점수는 높지만 이격도 과열로 진입 대기 — 강제 적립분만.", x.gate === "below" && "60점 미달 — 매수 보류 구간.", x.gate === "pending" && "영업이익(펀더멘털) 데이터 대기 중 — 종합점수 산정 전.")));
+    }, x.gate === "S" && "🔥 강력매수 — 동급 최상위 타이밍 구간.", x.gate === "A" && "✅ 매수 — 분할 1차 진입 가능한 구간.", x.gate === "B" && "• 관심 — 매수 문턱 바로 아래, 관망하며 대기.", x.gate === "hot" && "⚠️ 과열 — 종합점수는 높지만 이격도 과열, 추격 금지.", x.gate === "below" && "관망 — 매수 보류 구간.", x.gate === "pending" && "영업이익(펀더멘털) 데이터 대기 중 — 종합점수 산정 전.")));
   })), /*#__PURE__*/React.createElement("div", {
     className: "foot"
-  }, "시세·지수는 매 평일 자동 갱신. 점수는 v2.2 체계로 산출한 참고용 정보이며 투자 조언이 아닙니다.")), /*#__PURE__*/React.createElement("div", {
+  }, "시세·지수는 매 평일 자동 갱신. 점수는 v2.3 체계로 산출한 참고용 정보이며 투자 조언이 아닙니다.")), /*#__PURE__*/React.createElement("div", {
     className: "tabbar"
   }, /*#__PURE__*/React.createElement("button", {
     className: tab === "brief" ? "on" : "",

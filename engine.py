@@ -1,13 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-v2.2 매수타이밍 점수 엔진 (구현 명세서 v2.2 완전 반영)
+v2.3 매수타이밍 점수 엔진 (v2.2 → v2.3 재보정: 바닥값 하향 + 등급제)
 ─────────────────────────────────────────────────────────────
-하루 1회 실행 → 한국/미국 시총 상위 종목 시세를 받아 종합점수·게이트 계산 → scores.json
+하루 1회 실행 → 한국/미국 시총 상위 종목 시세를 받아 종합점수·등급 계산 → scores.json
+
+[v2.3 변경점 — 점수가 너무 후한 문제 해결]
+  · 펀더멘털 문턱 상향·바닥 하향(영업이익 0%가 더 이상 후하지 않음)
+  · 시장위험 '중립' 바닥 하향(공짜 점수 제거), 거래량 무자료 5→4
+  · 모멘텀 재설계: 급등 추격 억제, 약보합·얕은 눌림을 최적 타이밍으로
+  · 이격도: MA20 -8% 이하 진짜 눌림에만 만점
+  · 게이트 → 등급제: S(강력매수 75+)/A(매수 70+)/B(관심 62+)/관망/과열
+    → 중앙값이 50점대로 내려가 '매수가능(S+A)'은 보통날 5~10종목으로 엄선됨
 
 [자동 계산 — 시세에서 바로]
   유형 A/B 분류, 이격도/정배열/거래량(추세건전성 30), 모멘텀, 52주위치/낙폭(유형 B),
-  환율 페널티(-12/-6/0), 이격도 게이트, 60점 컷오프 최종 게이트.
+  환율 페널티(-12/-6/0), 이격도 과열 게이트, 등급 컷오프(S/A/B).
 
 [유일한 외부 입력 — inputs.csv]
   op_profit_yoy : 최근 4분기 영업이익 YoY(%)  ← 펀더멘털 점수의 입력 (분기 공시 주기, 매일 안 변함)
@@ -197,25 +205,29 @@ def load_inputs(path="inputs.csv"):
             d[r["ticker"].strip()] = r
     return d
 
-# ── v2.2 점수 규칙 (명세서 그대로) ───────────────────────────
+# ── v2.3 점수 규칙 (v2.2 재보정: 바닥값 하향 + 등급제) ───────────
 def classify(h):
     if h["hi52"] and h["close"] >= h["hi52"]*0.80 and h["ma60"] and h["ma20"] > h["ma60"]:
         return "A"
     return "B"
 
 def fundamental(yoy, scale35=True, bonus=0):
+    # v2.3: 문턱 상향 + 바닥 하향. 영업이익 0%는 더 이상 후하지 않게(과거 22/18 → 15/13).
     if yoy is None: return None
-    t = [(30,35,30),(15,30,26),(5,26,22),(0,22,18),(-10,18,14)]
-    base = 12 if scale35 else 8
-    for thr, a, b in t:
-        if yoy >= thr: base = (a if scale35 else b); break
-    cap = 35 if scale35 else 30
+    if scale35:
+        t = [(40,35),(25,30),(12,23),(0,15),(-15,8)]; base = 3; cap = 35
+    else:
+        t = [(40,30),(25,26),(12,20),(0,13),(-15,7)]; base = 2; cap = 30
+    for thr, val in t:
+        if yoy >= thr: base = val; break
     return min(cap, base + (bonus if scale35 else 0))
 
 def disparity_score(d):
-    if d <= 5: return 12          # -5~+5% 및 그 이하(눌림) = 12
-    if d <= 15: return 7
-    if d <= 25: return 3
+    # v2.3: 진짜 눌림(MA20 -8% 이하)에만 만점, 가까이/연장엔 감점 강화.
+    if d <= -8: return 12         # 의미 있는 눌림
+    if d <= 3:  return 9          # MA20 부근
+    if d <= 10: return 5
+    if d <= 20: return 2
     return 0
 
 def alignment_score(price, ma20, ma60):
@@ -225,33 +237,38 @@ def alignment_score(price, ma20, ma60):
     return 5
 
 def volume_score(vol, avg20, up):
-    if not avg20: return 5
+    if not avg20: return 4
     r = vol/avg20
     if up and r >= 1.0: return 8
     if r >= 0.7: return 5
     return 3
 
 def momentum_A(chg):
-    if chg >= 10: return 5        # 급등 + 추격 페널티
-    if chg >= 5: return 11
-    if chg >= 2: return 12
-    if chg >= 0: return 10
-    if chg >= -2: return 9
-    return 6
+    # v2.3: 추격 억제. 약보합/얕은 눌림이 최적 타이밍, 급등일수록 감점. (max 11)
+    if chg >= 8: return 3
+    if chg >= 4: return 6
+    if chg >= 1: return 8
+    if chg >= -1: return 10
+    if chg >= -4: return 11
+    if chg >= -8: return 8
+    return 5
 
 def momentum_B(chg):
-    if chg >= 10: return 7
-    if chg >= 5: return 16
-    if chg >= 2: return 18
-    if chg >= 0: return 13
-    if chg >= -2: return 10
+    # v2.3: 급등일 일괄 인플레 제거. peak는 약보합(13), 큰 상승은 추격으로 감점. (max 13)
+    if chg >= 10: return 4
+    if chg >= 6: return 8
+    if chg >= 3: return 11
+    if chg >= 0.5: return 12
+    if chg >= -2: return 13
+    if chg >= -6: return 10
     return 6
 
 def market_risk(flow, high_vol, defensive, import_heavy, usdkrw, scale20=True):
-    s = 12 if scale20 else 9
-    if flow == "sell": s += -3 if scale20 else -2
+    # v2.3: 중립 바닥 하향(과거 60%→40%). '중립'이 공짜 점수가 되지 않도록.
+    s = 8 if scale20 else 6
+    if flow == "sell": s += -4 if scale20 else -3
     elif flow == "buy": s += 3
-    if high_vol: s -= 2
+    if high_vol: s -= 3
     if defensive: s += 2
     if scale20 and import_heavy and usdkrw and usdkrw >= 1520: s -= 2
     return max(0, min(20 if scale20 else 15, s))
@@ -269,12 +286,18 @@ def fx_penalty(usdkrw):
     if not usdkrw: return 0
     return -12 if usdkrw >= 1520 else (-6 if usdkrw >= 1490 else 0)
 
+# v2.3 등급 컷오프 (재보정된 0~100 척도 기준; 중앙값 ≈ 55~62)
+GRADE_S, GRADE_A, GRADE_B = 75, 70, 62   # S 강력매수 / A 매수 / B 관심
+
 def final_gate(typ, total, dsc):
+    # v2.3: 절대 점수 → 등급. 매수가능 = S(강력매수)+A(매수). B=관심, below=관망, hot=과열.
     if total is None: return "pending"
-    if total < 60: return "below"
-    if typ == "A":
-        return "ok" if dsc >= 7 else ("hot" if dsc == 3 else "blocked")
-    return "ok"
+    # 유형A가 고점권에서 과도하게 연장(이격도 만점 미달, dsc<=2 → MA20 +10% 초과)이면 추격 금지 → 과열
+    if typ == "A" and dsc <= 2 and total >= GRADE_B: return "hot"
+    if total >= GRADE_S: return "S"
+    if total >= GRADE_A: return "A"
+    if total >= GRADE_B: return "B"
+    return "below"
 
 # ── 한글 여부 판별 ──────────────────────────────────────────
 def _has_korean(s):
