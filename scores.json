@@ -1,6 +1,6 @@
 {
-  "as_of": "2026-06-30 05:56",
-  "fx_usdkrw": 1540.19,
+  "as_of": "2026-06-30 07:04",
+  "fx_usdkrw": 1540.65,
   "fx_penalty": -12,
   "dart_filled_kr": 41,
   "yahoo_filled_kr": 8,
@@ -1809,11 +1809,11 @@
       "fundamental": 8,
       "disparity_score": 5,
       "alignment": 10,
-      "volume": 3,
-      "trend_health": 18,
+      "volume": 5,
+      "trend_health": 20,
       "momentum": 11,
       "market_risk": 8,
-      "total": 33,
+      "total": 35,
       "gate": "below"
     },
     {
@@ -1832,11 +1832,11 @@
       "fundamental": 15,
       "disparity_score": 2,
       "alignment": 10,
-      "volume": 5,
-      "trend_health": 17,
+      "volume": 8,
+      "trend_health": 20,
       "momentum": 3,
       "market_risk": 8,
-      "total": 31,
+      "total": 34,
       "gate": "below"
     },
     {
@@ -1878,11 +1878,11 @@
       "fundamental": 8,
       "disparity_score": 5,
       "alignment": 10,
-      "volume": 5,
-      "trend_health": 20,
+      "volume": 8,
+      "trend_health": 23,
       "momentum": 10,
       "market_risk": 8,
-      "total": 34,
+      "total": 37,
       "gate": "below"
     },
     {
@@ -2037,11 +2037,11 @@
       "fundamental": 23,
       "disparity_score": 9,
       "alignment": 5,
-      "volume": 3,
-      "trend_health": 17,
+      "volume": 5,
+      "trend_health": 19,
       "momentum": 10,
       "market_risk": 8,
-      "total": 46,
+      "total": 48,
       "gate": "below"
     },
     {
@@ -2082,11 +2082,11 @@
       "fundamental": 15,
       "disparity_score": 9,
       "alignment": 10,
-      "volume": 3,
-      "trend_health": 22,
+      "volume": 5,
+      "trend_health": 24,
       "momentum": 8,
       "market_risk": 8,
-      "total": 41,
+      "total": 43,
       "gate": "below"
     },
     {
