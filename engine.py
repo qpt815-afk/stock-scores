@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-v2.3 매수타이밍 점수 엔진 (v2.2 → v2.3 재보정: 바닥값 하향 + 등급제)
+v2.4 매수타이밍 점수 엔진 (배점 합=100 정규화 + 유형 A 이격도 보정)
 ─────────────────────────────────────────────────────────────
 하루 1회 실행 → 한국/미국 시총 상위 종목 시세를 받아 종합점수·등급 계산 → scores.json
 
-[v2.3 변경점 — 점수가 너무 후한 문제 해결]
-  · 펀더멘털 문턱 상향·바닥 하향(영업이익 0%가 더 이상 후하지 않음)
-  · 시장위험 '중립' 바닥 하향(공짜 점수 제거), 거래량 무자료 5→4
-  · 모멘텀 재설계: 급등 추격 억제, 약보합·얕은 눌림을 최적 타이밍으로
-  · 이격도: MA20 -8% 이하 진짜 눌림에만 만점
-  · 게이트: 종합 60점 이상 = 투자가능(중립 표기). 유형 A 고점 과열은 과열주의.
+[v2.4 — 배점 정규화 + A·B 균형]
+  · 항목 배점을 유형별 합=정확히 100으로 재설계(이전엔 96/93이라 만점이 100이 아니었음).
+    - 유형 A(추세추종): 펀더 30 · 이격도 16 · 정배열 14 · 거래량 10 · 모멘텀 10 · 시장위험 20
+    - 유형 B(역추세):   펀더 30 · 52주위치 22 · 낙폭 18 · 모멘텀 15 · 시장위험 15
+  · #1 보정: 유형 A 이격도가 'MA20 부근(얕은 눌림)'에 만점 → A의 자기모순(강세라 이격도≈0) 해소.
+    → A·B 평균점수가 균형(캐시 검증: KR 64.0 vs 64.1).
+  · 게이트: 종합 60점 이상 = 투자가능(중립 표기). 유형 A 고점 과열(이격도 최저)은 과열주의.
     ('강력매수' 등 권유성 표현은 쓰지 않음 — 참고용 정보)
 
 [자동 계산 — 시세에서 바로]
-  유형 A/B 분류, 이격도/정배열/거래량(추세건전성 30), 모멘텀, 52주위치/낙폭(유형 B),
+  유형 A/B 분류, 이격도/정배열/거래량, 모멘텀, 52주위치/낙폭(유형 B),
   환율 페널티(-12/-6/0), 이격도 과열 게이트, 60점 투자가능 컷오프.
 
 [유일한 외부 입력 — inputs.csv]
@@ -211,76 +212,86 @@ def classify(h):
         return "A"
     return "B"
 
-def fundamental(yoy, scale35=True, bonus=0):
-    # v2.3: 문턱 상향 + 바닥 하향. 영업이익 0%는 더 이상 후하지 않게(과거 22/18 → 15/13).
+def fundamental(yoy, bonus=0):
+    # v2.4: 펀더 항목 A·B 공통 cap 30 (배점 합=100 정규화). 영업이익 YoY → 점수.
     if yoy is None: return None
-    if scale35:
-        t = [(40,35),(25,30),(12,23),(0,15),(-15,8)]; base = 3; cap = 35
-    else:
-        t = [(40,30),(25,26),(12,20),(0,13),(-15,7)]; base = 2; cap = 30
+    t = [(40,30),(25,26),(12,20),(0,13),(-15,7)]; base = 2
     for thr, val in t:
         if yoy >= thr: base = val; break
-    return min(cap, base + (bonus if scale35 else 0))
+    return min(30, base + bonus)
 
 def disparity_score(d):
-    # v2.3: 진짜 눌림(MA20 -8% 이하)에만 만점, 가까이/연장엔 감점 강화.
-    if d <= -8: return 12         # 의미 있는 눌림
-    if d <= 3:  return 9          # MA20 부근
-    if d <= 10: return 5
-    if d <= 20: return 2
-    return 0
+    # v2.4: cap 16. 유형 A의 자기모순 해소(#1) — MA20 부근(약한 눌림~소폭 위)이 추세추종 최적 진입.
+    #       (유형 B 점수엔 미반영 — 표시·과열게이트용으로만 계산)
+    if d <= -18: return 5         # MA20 한참 아래 — 추세 흔들림
+    if d <= 4:   return 16        # MA20 부근 = 최적
+    if d <= 10:  return 10        # 소폭 연장
+    if d <= 18:  return 5         # 연장
+    return 1                      # 과열/추격
 
 def alignment_score(price, ma20, ma60):
-    if ma60 is None: return 10 if price > ma20 else 5
+    # v2.4: cap 14.
+    if ma60 is None: return 14 if price > ma20 else 7
     if price < ma60: return 0
-    if price > ma20 and ma20 > ma60: return 10
-    return 5
+    if price > ma20 and ma20 > ma60: return 14
+    return 7
 
 def volume_score(vol, avg20, up):
-    if not avg20: return 4
+    # v2.4: cap 10.
+    if not avg20: return 5
     r = vol/avg20
-    if up and r >= 1.0: return 8
-    if r >= 0.7: return 5
+    if up and r >= 1.0: return 10
+    if r >= 0.7: return 6
     return 3
 
 def momentum_A(chg):
-    # v2.3: 추격 억제. 약보합/얕은 눌림이 최적 타이밍, 급등일수록 감점. (max 11)
+    # v2.4: cap 10. 추격 억제, 약보합/얕은 눌림이 최적.
     if chg >= 8: return 3
-    if chg >= 4: return 6
-    if chg >= 1: return 8
-    if chg >= -1: return 10
-    if chg >= -4: return 11
-    if chg >= -8: return 8
-    return 5
+    if chg >= 4: return 5
+    if chg >= 1: return 7
+    if chg >= -1: return 9
+    if chg >= -4: return 10
+    if chg >= -8: return 7
+    return 4
 
 def momentum_B(chg):
-    # v2.3: 급등일 일괄 인플레 제거. peak는 약보합(13), 큰 상승은 추격으로 감점. (max 13)
-    if chg >= 10: return 4
-    if chg >= 6: return 8
-    if chg >= 3: return 11
-    if chg >= 0.5: return 12
-    if chg >= -2: return 13
-    if chg >= -6: return 10
-    return 6
+    # v2.4: cap 15. peak는 약보합, 큰 상승은 추격으로 감점.
+    if chg >= 10: return 5
+    if chg >= 6: return 9
+    if chg >= 3: return 12
+    if chg >= 0.5: return 14
+    if chg >= -2: return 15
+    if chg >= -6: return 11
+    return 7
 
 def market_risk(flow, high_vol, defensive, import_heavy, usdkrw, scale20=True):
-    # v2.3: 중립 바닥 하향(과거 60%→40%). '중립'이 공짜 점수가 되지 않도록.
-    s = 8 if scale20 else 6
-    if flow == "sell": s += -4 if scale20 else -3
-    elif flow == "buy": s += 3
-    if high_vol: s -= 3
-    if defensive: s += 2
-    if scale20 and import_heavy and usdkrw and usdkrw >= 1520: s -= 2
-    return max(0, min(20 if scale20 else 15, s))
+    # v2.4: 상한(20/15)에 도달 가능하도록 스윙 확대 — 외국인 매수 + 방어주면 만점.
+    #       중립은 ~50%(공짜 만점은 아님). 배점 합=100이 실제로 성립하게.
+    if scale20:
+        s = 10
+        if flow == "sell": s -= 5
+        elif flow == "buy": s += 6
+        if high_vol: s -= 5
+        if defensive: s += 4
+        if import_heavy and usdkrw and usdkrw >= 1520: s -= 4
+        return max(0, min(20, s))
+    s = 7
+    if flow == "sell": s -= 4
+    elif flow == "buy": s += 5
+    if high_vol: s -= 4
+    if defensive: s += 3
+    return max(0, min(15, s))
 
 def pos_52w(price, lo, hi):
-    if hi == lo: return 12
+    # v2.4: cap 22.
+    if hi == lo: return 13
     p = (price-lo)/(hi-lo)*100
-    return 20 if p <= 20 else 16 if p <= 40 else 12 if p <= 60 else 8 if p <= 80 else 4
+    return 22 if p <= 20 else 18 if p <= 40 else 13 if p <= 60 else 8 if p <= 80 else 4
 
 def drawdown_score(price, hi):
+    # v2.4: cap 18.
     dd = (hi-price)/hi*100
-    return 15 if dd >= 40 else 12 if dd >= 30 else 9 if dd >= 20 else 6 if dd >= 10 else 3
+    return 18 if dd >= 40 else 14 if dd >= 30 else 10 if dd >= 20 else 6 if dd >= 10 else 3
 
 def fx_penalty(usdkrw):
     if not usdkrw: return 0
@@ -317,7 +328,7 @@ def build_row(stock, market, fx, inp, candles=None):
     dsc = disparity_score(disp)
 
     if typ == "A":
-        f = fundamental(yoy, True, int(c.get("bonus", 0) or 0))
+        f = fundamental(yoy, int(c.get("bonus", 0) or 0))
         al = alignment_score(h["close"], h["ma20"], h["ma60"])
         v = volume_score(h["vol"], h["avg_vol20"], up)
         trend = dsc + al + v
@@ -330,7 +341,7 @@ def build_row(stock, market, fx, inp, candles=None):
         p = pos_52w(h["close"], h["lo52"], h["hi52"])
         dd = drawdown_score(h["close"], h["hi52"])
         m = momentum_B(h["chg_pct"])
-        f = fundamental(yoy, False)
+        f = fundamental(yoy)
         r = market_risk(flow, flag("high_vol"), flag("defensive"), False, fx, False)
         comp = {"fundamental": f, "pos_52w": p, "drawdown": dd, "momentum": m, "market_risk": r,
                 "disparity_score": dsc}
