@@ -593,7 +593,7 @@ const AlertCircle = p => /*#__PURE__*/React.createElement(Svg, p, /*#__PURE__*/R
 }));
 const STATUS = {
   ok: {
-    label: "투자가능",
+    label: "기준충족",
     icon: "✅",
     color: "#3ecf8e",
     bg: "rgba(62,207,142,.12)"
@@ -605,7 +605,7 @@ const STATUS = {
     bg: "rgba(227,146,78,.12)"
   },
   below: {
-    label: "60 미달",
+    label: "대기",
     icon: "·",
     color: "#6b7280",
     bg: "rgba(120,126,135,.08)"
@@ -620,18 +620,20 @@ const STATUS = {
 const isBuyable = g => g === "ok" || g === "hot";
 const chgColor = c => c >= 0 ? "#ec4d4d" : "#4d82e6";
 const fmt = n => typeof n === "number" ? n.toLocaleString() : n;
-const typeLabel = t => t === "A" ? "추세추종형" : "역추세형(조정)";
+const typeLabel = t => t === "A" ? "추세추종형" : "바닥회복형";
 const Pill = ({
-  gate
+  gate,
+  label
 }) => {
   const s = STATUS[gate] || STATUS.pending;
+  // v2.9: 엔진이 보낸 display_label을 우선 사용, 없으면 기존 게이트 매핑으로 폴백
   return /*#__PURE__*/React.createElement("span", {
     className: "pill",
     style: {
       color: s.color,
       background: s.bg
     }
-  }, s.icon, " ", s.label);
+  }, s.icon, " ", label || s.label);
 };
 function CandleChart({ ohlc }) {
   if (!ohlc || ohlc.length < 2)
@@ -719,7 +721,7 @@ function App() {
     className: "hd-top"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "kicker"
-  }, tab === "brief" ? "Daily Market Brief · v2.7" : "Buy-Timing Score · v2.7"), /*#__PURE__*/React.createElement("div", {
+  }, tab === "brief" ? "Daily Market Brief · v2.9" : "Buy-Timing Score · v2.9"), /*#__PURE__*/React.createElement("div", {
     className: "title"
   }, tab === "brief" ? "오늘의 브리핑" : "매수타이밍 점수"), /*#__PURE__*/React.createElement("div", {
     className: "date"
@@ -817,9 +819,9 @@ function App() {
     className: "brief-h"
   }, /*#__PURE__*/React.createElement("h3", null, "오늘의 요약"), /*#__PURE__*/React.createElement("span", {
     className: "vtag"
-  }, "v2.7")), /*#__PURE__*/React.createElement("div", {
+  }, "v2.9")), /*#__PURE__*/React.createElement("div", {
     className: "brief-b"
-  }, market === "kr" ? /*#__PURE__*/React.createElement(React.Fragment, null, "환율 ", /*#__PURE__*/React.createElement("b", null, fmt(data.fx_usdkrw), "원"), " · 한국 상위 ", byRank.length, "종목 중 투자가능 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), " (종합 60점 이상). 참고용 정보예요.") : /*#__PURE__*/React.createElement(React.Fragment, null, "환율 ", /*#__PURE__*/React.createElement("b", null, fmt(data.fx_usdkrw), "원"), "이라 미국주 환율 페널티 적용 중. 투자가능 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), ".")), buyList.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, market === "kr" ? /*#__PURE__*/React.createElement(React.Fragment, null, "환율 ", /*#__PURE__*/React.createElement("b", null, fmt(data.fx_usdkrw), "원"), " · 한국 상위 ", byRank.length, "종목 중 기준충족 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), " (A 60 / B 70점 이상). 참고용 정보예요.") : /*#__PURE__*/React.createElement(React.Fragment, null, "환율 ", /*#__PURE__*/React.createElement("b", null, fmt(data.fx_usdkrw), "원"), "이라 미국주 환율 페널티 적용 중. 기준충족 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), ".")), buyList.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "buychips"
   }, buyList.slice(0, 8).map(x => /*#__PURE__*/React.createElement("span", {
     className: "buychip",
@@ -863,15 +865,15 @@ function App() {
     key: "s" + market + filter
   }, info && /*#__PURE__*/React.createElement("div", {
     className: "info"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("b", null, "유형 A"), " (추세추종형): 펀더 30 · 이격도 16 · 정배열 14 · 거래량 10 · 모멘텀 18 · 시장위험 12 = 100점"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("b", null, "유형 A"), " (추세추종): 펀더 20 · 시장추세 15 · 정배열 15 · 이격도 15 · 거래량 15 · 모멘텀 10 · 수급위험 10 = 100점"), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 6
     }
-  }, /*#__PURE__*/React.createElement("b", null, "유형 B"), " (역추세형): 펀더 30 · 52주위치 22 · 낙폭 18 · 모멘텀 18 · 시장위험 12 = 100점"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("b", null, "유형 B"), " (바닥회복): 펀더 20 · 가격매력 25 · 회복확인 25 · 수급반전 10 · 시장안정 10 · 손절거리 10 = 100점"), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 6
     }
-  }, /*#__PURE__*/React.createElement("b", null, "투자가능"), " = 종합 60점 이상. 유형 A가 고점 과열이면 과열주의로 표시. 미국 종목은 환율 페널티 차감(원화 약세=감점). 외부 차감이라 총점은 100을 넘지 않아요. (참고용 정보이며 투자 권유가 아닙니다.)"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("b", null, "기준충족"), " = 유형 A 60점 이상, 유형 B 70점 이상(회복신호 2개 이상·손절폭 10% 이내). A·B 어느 쪽도 아니면 검토제외. 회복신호 0개는 대기, 1개는 회복초기. 유형 A 고점 과열은 과열주의. 미국 종목은 환율 페널티 차감(원화 약세=감점). 외부 차감이라 총점은 100을 넘지 않아요. (참고용 정보이며 투자 권유가 아닙니다.)"), /*#__PURE__*/React.createElement("div", {
     className: "leg"
   }, ["ok", "hot", "below"].map(g => /*#__PURE__*/React.createElement("span", {
     key: g
@@ -894,9 +896,9 @@ function App() {
     className: "l"
   }, STATUS[g].label)))), /*#__PURE__*/React.createElement("div", {
     className: "ctx"
-  }, market === "kr" ? /*#__PURE__*/React.createElement(React.Fragment, null, "오늘 투자가능 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), " (종합 60점 이상). 투자 판단은 참고용으로만 활용하세요.") : /*#__PURE__*/React.createElement(React.Fragment, null, "환율 페널티 적용 중 (", fmt(data.fx_usdkrw), "원). 투자가능 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), ".")), /*#__PURE__*/React.createElement("div", {
+  }, market === "kr" ? /*#__PURE__*/React.createElement(React.Fragment, null, "오늘 기준충족 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), " (A 60 / B 70점 이상). 투자 판단은 참고용으로만 활용하세요.") : /*#__PURE__*/React.createElement(React.Fragment, null, "환율 페널티 적용 중 (", fmt(data.fx_usdkrw), "원). 기준충족 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), ".")), /*#__PURE__*/React.createElement("div", {
     className: "chips"
-  }, [["all", "전체"], ["buy", "✅ 투자가능"], ["hold", "60 미달"]].map(([k, l]) => /*#__PURE__*/React.createElement("button", {
+  }, [["all", "전체"], ["buy", "✅ 기준충족"], ["hold", "대기"]].map(([k, l]) => /*#__PURE__*/React.createElement("button", {
     key: k,
     className: `chip ${filter === k ? "on" : ""}`,
     onClick: () => setFilter(k)
@@ -924,8 +926,8 @@ function App() {
     const id = `${market}-${x.rank}`;
     const s = STATUS[x.gate] || STATUS.pending;
     const star = x.disparity < -8;
-    const drv = x.total == null ? `유형${x.type} · 데이터대기` : x.type === "A" ? `유형A · 이격도 ${x.disparity_score}점 (${x.disparity}%)` : `유형B · 낙폭 ${x.drawdown}/18 · 52주 ${x.pos_52w}/22`;
-    const metrics = x.type === "A" ? [["펀더", x.fundamental, 30], ["이격도", x.disparity_score, 16], ["정배열", x.alignment, 14], ["거래량", x.volume, 10], ["모멘텀", x.momentum, 18], ["시장위험", x.market_risk, 12]] : [["펀더", x.fundamental, 30], ["52주위치", x.pos_52w, 22], ["낙폭", x.drawdown, 18], ["모멘텀", x.momentum, 18], ["시장위험", x.market_risk, 12]];
+    const drv = x.total == null ? `유형${x.type} · 데이터대기` : x.type === "A" ? `유형A · 이격도 ${x.disparity_score}점 (${x.disparity}%)` : x.type_v2_9 === "NONE" ? `검토제외 · 회복 ${x.recovery_signal_count ?? 0}/3` : `유형B · 회복 ${x.recovery_signal_count ?? 0}/3 · 손절 ${x.stop_loss_pct != null ? x.stop_loss_pct + "%" : "—"}`;
+    const metrics = x.type === "A" ? [["펀더", x.fundamental ?? "—", 20], ["시장추세", x.market_trend ?? "—", 15], ["정배열", x.alignment ?? "—", 15], ["이격도", x.disparity_score ?? "—", 15], ["거래량", x.volume ?? "—", 15], ["모멘텀", x.momentum ?? "—", 10], ["수급위험", x.market_risk ?? "—", 10]] : [["펀더", x.fundamental ?? "—", 20], ["가격매력", x.price_attraction ?? "—", 25], ["회복확인", x.recovery_score ?? "—", 25], ["수급반전", x.volume_flow ?? "—", 10], ["시장안정", x.market_stability ?? "—", 10], ["손절", x.stop_loss_score ?? "—", 10]];
     return /*#__PURE__*/React.createElement("div", {
       key: id
     }, /*#__PURE__*/React.createElement("div", {
@@ -951,12 +953,13 @@ function App() {
       className: "name"
     }, x.name), /*#__PURE__*/React.createElement("span", {
       className: `typetag ${x.type === "A" ? "ta" : "tb"}`
-    }, x.type)), /*#__PURE__*/React.createElement("div", {
+    }, x.type_v2_9 || x.type)), /*#__PURE__*/React.createElement("div", {
       className: "drv"
     }, drv)), /*#__PURE__*/React.createElement("div", {
       className: "right"
     }, /*#__PURE__*/React.createElement(Pill, {
-      gate: x.gate
+      gate: x.gate,
+      label: x.display_label
     }), /*#__PURE__*/React.createElement("span", {
       className: "chg",
       style: {
@@ -983,10 +986,10 @@ function App() {
       className: "v"
     }, x.fx_penalty))), /*#__PURE__*/React.createElement("div", {
       className: "dnote"
-    }, x.gate === "ok" && "✅ 종합 60점 이상 — 투자가능 구간(참고용).", x.gate === "hot" && "⚠️ 과열주의 — 종합점수는 높지만 이격도가 과열입니다.", x.gate === "below" && "종합 60점 미달 — 관망 구간.", x.gate === "pending" && "영업이익(펀더멘털) 데이터 대기 중 — 종합점수 산정 전.")));
+    }, x.gate_reason || (x.gate === "ok" && "✅ 기준충족 — 점수 기준을 충족했습니다(참고용).") || (x.gate === "hot" && "⚠️ 과열주의 — 종합점수는 높지만 이격도가 과열입니다.") || (x.gate === "below" && "대기 — 점수 기준 미달 구간.") || (x.gate === "pending" && "데이터대기 — 영업이익(펀더멘털) 데이터 산정 전."))));
   })), /*#__PURE__*/React.createElement("div", {
     className: "foot"
-  }, "시세·지수는 매 평일 자동 갱신. 점수는 v2.7 체계로 산출한 참고용 정보이며 투자 조언이 아닙니다.")), /*#__PURE__*/React.createElement("div", {
+  }, "시세·지수는 매 평일 자동 갱신. 점수는 v2.9 체계로 산출한 참고용 정보이며 투자 조언이 아닙니다.")), /*#__PURE__*/React.createElement("div", {
     className: "tabbar"
   }, /*#__PURE__*/React.createElement("button", {
     className: tab === "brief" ? "on" : "",

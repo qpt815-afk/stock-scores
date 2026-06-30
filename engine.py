@@ -1,8 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-v2.8 매수타이밍 점수 엔진 (배점 합=100 정규화 + 유형 B 회복확인)
+v2.9 매수타이밍 점수 엔진 (A 추세추종 / B 바닥회복 / NONE 검토제외 + 보수적 게이트)
 ─────────────────────────────────────────────────────────────
+
+[v2.9 — 분류 3분기·B 게이트 강화·손절거리·시장추세·중립 라벨]
+  · 분류 A/B/NONE: A 조건에 '현재가 >= 20일선 x 0.97' 추가, B는 '낙폭>=20% & 52주위치<=60%'
+    저가권 후보만, 둘 다 아니면 NONE(검토제외) — 애매한 종목을 억지로 B에 넣지 않음.
+  · B 게이트 강화: 회복신호 0→대기, 1→회복초기(상한59), 2개↑ & 총점>=70 & 손절폭<=10%만 기준충족.
+    회복은 독립 점수(0/8/18/25). 손절거리(stop_loss_pct=최근 20일 저점 기준) 신설·게이트화.
+  · A 배점 재조정(펀더20·시장추세15·정배열15·이격도15·거래량15·모멘텀10·수급위험10), 이격도 만점밴드
+    축소(-3~+4%), 시장지수 약세(20일선 아래·하락)면 A 상한 69·기준충족 보류.
+  · B 배점(펀더20·가격매력25·회복25·수급반전10·시장안정10·손절10). 펀더 30→20 공통 축소.
+  · 라벨 중립화: 기준충족/대기/회복초기/과열주의/데이터대기/검토제외/위험주의(‘투자가능’ 등 권유표현 폐기).
+    scores.json에 type_v2_9·gate_v2_9·display_label·gate_reason·stop_loss_pct 등 신규필드 추가
+    (기존 type/gate/항목 필드는 호환 유지).
 
 [v2.8 — 유형 B 회복확인(falling knife 방지) + 모멘텀 재설계]
   · 유형 B에 회복확인(recovery_signal: 종가>MA5 · MA5 상향전환 · 5일수익률>0, 0~3개) 도입.
@@ -217,53 +229,64 @@ def load_inputs(path="inputs.csv"):
             d[r["ticker"].strip()] = r
     return d
 
-# ── v2.3 점수 규칙 (v2.2 재보정: 바닥값 하향 + 등급제) ───────────
+# ════════════════════════════════════════════════════════════════
+# v2.9 점수 규칙 — A(추세추종) / B(바닥회복) / NONE(검토제외) + 보수적 게이트
+# ════════════════════════════════════════════════════════════════
 def classify(h):
-    if h["hi52"] and h["close"] >= h["hi52"]*0.80 and h["ma60"] and h["ma20"] > h["ma60"]:
+    """A: 강세 추세 + 20일선 근처/위 · B: 충분히 조정받은 저가권 후보 · NONE: 그 외(검토제외)."""
+    hi, lo, c, ma20, ma60 = h.get("hi52"), h.get("lo52"), h["close"], h["ma20"], h.get("ma60")
+    if hi and c >= hi*0.80 and ma60 and ma20 > ma60 and c >= ma20*0.97:
         return "A"
-    return "B"
+    dd = (hi - c)/hi*100 if hi else 0.0
+    pos = (c - lo)/(hi - lo)*100 if (hi and lo is not None and hi != lo) else 50.0
+    if dd >= 20 and pos <= 60:
+        return "B"
+    return "NONE"
 
 def fundamental(yoy, bonus=0):
-    # v2.4: 펀더 항목 A·B 공통 cap 30 (배점 합=100 정규화). 영업이익 YoY → 점수.
+    # v2.9: 배점 30→20 축소(타이밍 엔진이라 펀더 비중↓). 영업이익 YoY → 점수.
     if yoy is None: return None
-    t = [(40,30),(25,26),(12,20),(0,13),(-15,7)]; base = 2
+    t = [(40,20),(25,17),(12,14),(0,10),(-15,5)]; base = 2
     for thr, val in t:
         if yoy >= thr: base = val; break
-    return min(30, base + bonus)
+    return min(20, base + bonus)
 
 def disparity_score(d):
-    # v2.4: cap 16. 유형 A의 자기모순 해소(#1) — MA20 부근(약한 눌림~소폭 위)이 추세추종 최적 진입.
+    # v2.9: cap 15. A 추세추종 — 20일선 부근(-3~+4%)이 최적, 크게 아래면 추세손상 감점.
     #       (유형 B 점수엔 미반영 — 표시·과열게이트용으로만 계산)
-    if d <= -18: return 5         # MA20 한참 아래 — 추세 흔들림
-    if d <= 4:   return 16        # MA20 부근 = 최적
-    if d <= 10:  return 10        # 소폭 연장
-    if d <= 18:  return 5         # 연장
+    if d <= -18: return 2         # 20일선 한참 아래 — 추세 손상
+    if d <= -8:  return 5
+    if d <= -3:  return 9
+    if d <= 4:   return 15        # 20일선 부근 = 최적
+    if d <= 10:  return 9
+    if d <= 18:  return 5
     return 1                      # 과열/추격
 
 def alignment_score(price, ma20, ma60):
-    # v2.4: cap 14.
-    if ma60 is None: return 14 if price > ma20 else 7
+    # v2.9: cap 15.
+    if ma60 is None: return 15 if price > ma20 else 7
     if price < ma60: return 0
-    if price > ma20 and ma20 > ma60: return 14
+    if price > ma20 and ma20 > ma60: return 15
     return 7
 
 def volume_score(vol, avg20, up):
-    # v2.4: cap 10.
-    if not avg20: return 5
+    # v2.9: cap 15 (거래량/돌파). 평균 대비 거래 급증한 상승일 = 돌파.
+    if not avg20: return 7
     r = vol/avg20
-    if up and r >= 1.0: return 10
-    if r >= 0.7: return 6
-    return 3
+    if up and r >= 1.5: return 15
+    if up and r >= 1.0: return 12
+    if r >= 0.7: return 8
+    return 4
 
 def momentum_A(chg):
-    # v2.5: cap 18 (비중 확대). 추격 억제, 약보합/얕은 눌림이 최적.
-    if chg >= 8: return 4
-    if chg >= 4: return 7
-    if chg >= 1: return 11
-    if chg >= -1: return 15
-    if chg >= -4: return 18
-    if chg >= -8: return 11
-    return 6
+    # v2.9: cap 10. 추격 억제 — 얕은 눌림(-4~-1%)이 최적.
+    if chg >= 8: return 2
+    if chg >= 4: return 4
+    if chg >= 1: return 6
+    if chg >= -1: return 8
+    if chg >= -4: return 10
+    if chg >= -8: return 6
+    return 3
 
 def momentum_B(chg):
     # v2.8: cap 18. 회복 방향으로 재설계 — '바닥 찍고 완만히 반등'(+1.5~5%)이 최적 진입.
@@ -292,15 +315,14 @@ def recovery_signal(h):
     return sig
 
 def market_risk(flow, high_vol, defensive, import_heavy, usdkrw, scale20=True):
-    # v2.5: 비중 축소(20/15→12, 두 유형 공통). 중립 6, 외국인 매수+방어주면 만점 12.
-    #       외국인 수급(flow)은 foreign_flow.py로 매일 자동 수집 → 더 이상 고정값 아님.
-    s = 6
-    if flow == "sell": s -= 4
-    elif flow == "buy": s += 4
-    if high_vol: s -= 4
+    # v2.9: 수급/위험 (cap 10). 중립 5, 외국인 매수+방어주면 만점. flow는 매일 자동 수집.
+    s = 5
+    if flow == "sell": s -= 3
+    elif flow == "buy": s += 3
+    if high_vol: s -= 3
     if defensive: s += 2
-    if scale20 and import_heavy and usdkrw and usdkrw >= 1520: s -= 3
-    return max(0, min(12, s))
+    if scale20 and import_heavy and usdkrw and usdkrw >= 1520: s -= 2
+    return max(0, min(10, s))
 
 def pos_52w(price, lo, hi):
     # v2.4: cap 22.
@@ -317,25 +339,130 @@ def fx_penalty(usdkrw):
     if not usdkrw: return 0
     return -12 if usdkrw >= 1520 else (-6 if usdkrw >= 1490 else 0)
 
-# 투자가능 컷오프 (종합점수 이 이상이면 '투자가능' — 단일 기준, 등급제 미사용)
-PASS_CUT = 60
+# ── v2.9 신규 항목/게이트 helper ─────────────────────────────
+def recovery_items(h):
+    # 표시용: 충족된 회복 신호 이름 목록.
+    it = []
+    if h.get("ma5") and h["close"] > h["ma5"]: it.append("종가>5일선")
+    if h.get("ma5") and h.get("ma5_prev") and h["ma5"] > h["ma5_prev"]: it.append("5일선 상향전환")
+    if h.get("ret5") is not None and h["ret5"] > 0: it.append("5일수익률>0")
+    return it
 
-def final_gate(typ, total, dsc, rec=None):
-    # 종합 60점 이상 = 투자가능(ok). 유형 A 고점 과열은 과열주의(hot). 60 미만 = 관망(below).
-    # 유형 B는 회복 신호 0개(아직 하락 중)면 점수와 무관하게 관망(below) — '떨어질 때 사지 않기'.
-    # '강력매수' 등 권유성 표현은 쓰지 않음 — 점수 기준 충족 여부만 중립적으로 표기.
-    if total is None: return "pending"
-    if typ == "B" and rec == 0: return "below"  # 회복 미확인 = 낙주의(관망)
-    if total < PASS_CUT: return "below"
-    if typ == "A" and dsc <= 2: return "hot"   # 고점 과열 주의(중립 경고, 권유 아님)
-    return "ok"
+def recovery_score_B(n):
+    # v2.9: 회복확인을 독립 점수로 분리 (cap 25). 신호 1개는 게이트에서 watch까지만 허용.
+    return {0: 0, 1: 8, 2: 18, 3: 25}.get(n, 0)
+
+def price_attraction_B(price, lo, hi):
+    # v2.9: '가격 매력' = (52주 위치 + 낙폭, 0~40)을 25점으로 스케일.
+    raw = pos_52w(price, lo, hi) + drawdown_score(price, hi)
+    return round(raw / 40 * 25)
+
+def volume_flow_B(vol, avg20, up, flow):
+    # v2.9: 거래량/수급 반전 (cap 10). 상승일 거래 증가 + 외국인 매수.
+    s = 0
+    if avg20:
+        r = vol / avg20
+        if up and r >= 1.2: s += 6
+        elif up and r >= 0.9: s += 4
+        elif r >= 0.7: s += 2
+    else:
+        s += 2
+    if flow == "buy": s += 4
+    elif flow == "neutral": s += 2
+    return min(10, s)
+
+def market_stability_B(mkt):
+    # v2.9: 시장/업종 안정 (cap 10). 시장지수 추세 점수(0~15)를 10점으로 스케일.
+    if not mkt: return 5
+    return round(mkt["score"] / 15 * 10)
+
+def stop_loss_calc(price, ohlc):
+    # v2.9: 최근 20거래일 저가의 최저값 기준 손절폭(%). 데이터 부족 시 (None, None).
+    lows = [c[2] for c in (ohlc or []) if len(c) >= 3][-20:]
+    if len(lows) < 5 or not price: return None, None
+    rl = min(lows)
+    return round(rl, 2), round((price - rl) / price * 100, 2)
+
+def stop_loss_score_B(slp):
+    # v2.9: 손익비/손절거리 (cap 10).
+    if slp is None: return 3
+    if slp <= 5:  return 10
+    if slp <= 8:  return 7
+    if slp <= 10: return 4
+    return 0
+
+def stop_loss_gate(slp):
+    if slp is None: return "unknown", "최근 20일 저점 데이터 부족"
+    if slp <= 5:  return "good", f"손절폭 {slp}% (양호)"
+    if slp <= 8:  return "ok",   f"손절폭 {slp}% (허용)"
+    if slp <= 10: return "warn", f"손절폭 {slp}% (경고)"
+    return "over", f"손절폭 {slp}% (10% 초과 — 과대)"
+
+def index_trend(sym):
+    # v2.9: 시장지수 추세. 20일선 위/아래 + 20일선 기울기로 점수(0~15)·약세 게이트 산출.
+    try:
+        res = requests.get(YF.format(sym=sym), headers=UA, timeout=20).json()["chart"]["result"][0]
+        cl = [c for c in res["indicators"]["quote"][0]["close"] if c is not None]
+        if len(cl) < 25: return None
+        ma20 = sum(cl[-20:]) / 20
+        ma20_prev = sum(cl[-25:-5]) / 20
+        close = cl[-1]; rising = ma20 > ma20_prev; above = close > ma20
+        if   above and rising: sc, weak = 15, False
+        elif above:            sc, weak = 10, False
+        elif rising:           sc, weak = 7,  False
+        else:                  sc, weak = 3,  True
+        return {"score": sc, "weak": weak, "above": above, "rising": rising,
+                "close": round(close, 2), "ma20": round(ma20, 1)}
+    except Exception:
+        return None
+
+# 유형별 기준점수 (보수적: B를 더 높게)
+PASS_CUT = 60       # (레거시 호환용 별칭)
+PASS_CUT_A = 60
+PASS_CUT_B = 70
+
+# 내부 게이트 코드 → 사용자 중립 표시명 (‘투자가능/매수/추천’ 등 권유 표현 금지)
+GATE_LABEL = {"ok": "기준충족", "below": "대기", "watch": "회복초기", "hot": "과열주의",
+              "pending": "데이터대기", "none": "검토제외", "risk": "위험주의"}
+# 신규 게이트 코드 → 기존(v2.8) 프론트 호환 코드 (ok/below/hot/pending만 사용)
+LEGACY_GATE = {"ok": "ok", "below": "below", "hot": "hot", "pending": "pending",
+               "watch": "below", "none": "below", "risk": "below"}
+
+def final_gate(typ, total, disp_pct, rec, slp, mkt_weak):
+    """v2.9 게이트 — 우선순위대로 (code, 표시명, 사유) 반환.
+    code: pending/none/below/watch/risk/hot/ok. 권유성 표현은 쓰지 않음."""
+    if total is None:
+        return "pending", GATE_LABEL["pending"], "영업이익 YoY 데이터 없음"
+    if typ == "NONE":
+        return "none", GATE_LABEL["none"], "A·B 조건 모두 불충족으로 검토제외"
+    if typ == "B":
+        if rec == 0:
+            return "below", GATE_LABEL["below"], "회복 신호 0개 — 아직 하락 중"
+        if rec == 1:
+            return "watch", GATE_LABEL["watch"], "회복 신호 1개 — 회복초기, 기준충족 보류"
+        if slp is not None and slp > 10:
+            return "risk", "손절폭과대", f"회복은 확인됐으나 손절폭 {slp}%가 10% 초과"
+        if total >= PASS_CUT_B and rec >= 2 and (slp is not None and slp <= 10):
+            return "ok", GATE_LABEL["ok"], f"B유형 회복확인({rec}개)·점수({total})·손절폭 조건 충족"
+        if slp is None:
+            return "below", GATE_LABEL["below"], "손절폭 데이터 부족 — 보수적으로 기준충족 보류"
+        return "below", GATE_LABEL["below"], f"B유형 기준점수(70) 미달 (현재 {total})"
+    if typ == "A":
+        if disp_pct is not None and disp_pct > 18:
+            return "hot", GATE_LABEL["hot"], "20일선 대비 +18% 초과 — 고점 추격 위험"
+        if mkt_weak:
+            return "watch", "시장약세", "시장지수가 20일선 아래·하락 — 기준충족 보류"
+        if total >= PASS_CUT_A:
+            return "ok", GATE_LABEL["ok"], f"A유형 추세·점수({total}) 기준 충족"
+        return "below", GATE_LABEL["below"], f"A유형 기준점수(60) 미달 (현재 {total})"
+    return "below", GATE_LABEL["below"], "기준 미달"
 
 # ── 한글 여부 판별 ──────────────────────────────────────────
 def _has_korean(s):
     return any('가' <= c <= '힣' for c in (s or ""))
 
 # ── 한 종목 ─────────────────────────────────────────────────
-def build_row(stock, market, fx, inp, candles=None):
+def build_row(stock, market, fx, inp, candles=None, mkt=None):
     h = fetch_history(stock["ticker"])
     if not h: return None
     if candles is not None and h.get("ohlc"):
@@ -345,37 +472,51 @@ def build_row(stock, market, fx, inp, candles=None):
     flow = c.get("foreign_flow", "neutral") or "neutral"
     flag = lambda k: str(c.get(k, "0")).strip() in ("1","true","True")
     up = h["chg_pct"] >= 0
-    typ = classify(h)
+    typ = classify(h)                                  # A / B / NONE
     disp = (h["close"]-h["ma20"])/h["ma20"]*100
     dsc = disparity_score(disp)
-    rec = None  # 유형 B 회복확인 강도(0~3); 유형 A는 미사용
+    f = fundamental(yoy, int(c.get("bonus", 0) or 0))
+    rl20, slp = stop_loss_calc(h["close"], h.get("ohlc"))
+    rec_n = recovery_signal(h)
+    rec_items = recovery_items(h)
+    mkt_weak = bool(mkt and mkt.get("weak"))
 
     if typ == "A":
-        f = fundamental(yoy, int(c.get("bonus", 0) or 0))
         al = alignment_score(h["close"], h["ma20"], h["ma60"])
         v = volume_score(h["vol"], h["avg_vol20"], up)
-        trend = dsc + al + v
+        mt = mkt["score"] if mkt else 8                # 시장/업종 추세 (cap 15)
         m = momentum_A(h["chg_pct"])
         r = market_risk(flow, flag("high_vol"), flag("defensive"), flag("import_heavy"), fx, True)
-        comp = {"fundamental": f, "disparity_score": dsc, "alignment": al, "volume": v,
-                "trend_health": trend, "momentum": m, "market_risk": r}
-        total = (f + trend + m + r) if f is not None else None
-    else:
-        # v2.8: 회복확인(rec)으로 '싸다' 점수를 가중 — 바닥 확인 없이 싸기만 한 추락주(falling knife)
-        #        에는 위치·낙폭 점수를 깎고, 회복 신호 0개면 final_gate에서 '관망' 처리.
-        rec = recovery_signal(h)
-        mult = {0: 0.30, 1: 0.65, 2: 0.85, 3: 1.0}[rec]
-        p = round(pos_52w(h["close"], h["lo52"], h["hi52"]) * mult)   # 52주 위치(가중)
-        dd = round(drawdown_score(h["close"], h["hi52"]) * mult)      # 낙폭(가중)
-        m = momentum_B(h["chg_pct"])
-        f = fundamental(yoy)
-        r = market_risk(flow, flag("high_vol"), flag("defensive"), False, fx, False)
-        comp = {"fundamental": f, "pos_52w": p, "drawdown": dd, "momentum": m, "market_risk": r,
-                "recovery": rec, "disparity_score": dsc}
-        total = (p + dd + m + f + r) if f is not None else None
+        trend = dsc + al + v
+        comp = {"fundamental": f, "market_trend": mt, "disparity_score": dsc, "alignment": al,
+                "volume": v, "trend_health": trend, "momentum": m, "market_risk": r, "recovery": rec_n}
+        total = (f + mt + dsc + al + v + m + r) if f is not None else None
+    else:  # B 또는 NONE — 동일 산식, 게이트에서만 구분
+        pa = price_attraction_B(h["close"], h["lo52"], h["hi52"])     # 가격매력 cap25
+        rs = recovery_score_B(rec_n)                                  # 회복확인 cap25
+        vf = volume_flow_B(h["vol"], h["avg_vol20"], up, flow)        # 거래량/수급반전 cap10
+        ms = market_stability_B(mkt)                                  # 시장/업종 안정 cap10
+        sl = stop_loss_score_B(slp)                                   # 손익비/손절거리 cap10
+        comp = {"fundamental": f, "price_attraction": pa, "recovery_score": rs,
+                "volume_flow": vf, "market_stability": ms, "stop_loss_score": sl,
+                "recovery": rec_n, "disparity_score": dsc,
+                # 레거시 호환(기존 프론트가 읽던 키) — 참고용 원점수
+                "pos_52w": pos_52w(h["close"], h["lo52"], h["hi52"]),
+                "drawdown": drawdown_score(h["close"], h["hi52"]),
+                "momentum": momentum_B(h["chg_pct"]),
+                "market_risk": market_risk(flow, flag("high_vol"), flag("defensive"), False, fx, False)}
+        total = (f + pa + rs + vf + ms + sl) if f is not None else None
 
     fxp = fx_penalty(fx) if market == "us" else 0
     if total is not None: total += fxp
+    # 보수적 상한: B 회복 1개 → 59, A 시장약세 → 69
+    if total is not None:
+        if typ == "B" and rec_n == 1: total = min(total, 59)
+        if typ == "A" and mkt_weak:   total = min(total, 69)
+
+    code, label, reason = final_gate(typ, total, (disp if typ == "A" else None), rec_n, slp, mkt_weak)
+    slg, slr = stop_loss_gate(slp)
+    mtg = "weak" if mkt_weak else ("strong" if (mkt and mkt.get("score", 0) >= 12) else "neutral")
 
     # 한국 종목: KR_NAMES 적용 후에도 한글이 없으면 Yahoo shortName으로 대체
     name = stock["name"]
@@ -385,21 +526,36 @@ def build_row(stock, market, fx, inp, candles=None):
             name = yn
 
     return {
-        "rank": stock["rank"], "name": name, "ticker": stock["ticker"], "type": typ,
+        "rank": stock["rank"], "name": name, "ticker": stock["ticker"],
+        "type": ("A" if typ == "A" else "B"),   # 레거시 호환(A/B). 3분류는 type_v2_9 참고
         "close": round(h["close"], 2), "chg_pct": round(h["chg_pct"], 2),
         "ma5": round(h["ma5"], 1) if h.get("ma5") else None,
         "ma20": round(h["ma20"], 1), "ma60": round(h["ma60"], 1) if h["ma60"] else None,
         "hi52": round(h["hi52"], 2), "lo52": round(h["lo52"], 2),
         "disparity": round(disp, 1), "fx_penalty": fxp,
-        **comp, "total": round(total) if total is not None else None,
-        "gate": final_gate(typ, total, dsc, rec),
+        **comp,
+        "total": round(total) if total is not None else None,
+        "gate": LEGACY_GATE.get(code, "below"),   # 기존 프론트 호환(ok/below/hot/pending)
+        # ── v2.9 신규 필드 ──
+        "type_v2_9": typ,
+        "gate_v2_9": code,
+        "display_label": label,
+        "gate_reason": reason,
+        "recovery_signal_count": rec_n,
+        "recovery_signal_items": rec_items,
+        "stop_loss_pct": slp,
+        "recent_low_20d": rl20,
+        "stop_loss_gate": slg,
+        "stop_loss_reason": slr,
+        "market_trend_gate": mtg,
+        "score_version": "v2.9",
     }
 
-def build_market(market, top, fx, inp, stocks=None, candles=None):
+def build_market(market, top, fx, inp, stocks=None, candles=None, mkt=None):
     rows = []
     for s in (stocks or fetch_ranking(market, top)):
         try:
-            r = build_row(s, market, fx, inp, candles)
+            r = build_row(s, market, fx, inp, candles, mkt)
             if r: rows.append(r)
         except Exception as e:
             print(f"  ! {s['ticker']}: {e}")
@@ -491,7 +647,8 @@ def main():
         print(f"  ! 외국인 수급 건너뜀: {e}")
 
     candles = {}  # 캔들차트용 종목 OHLC 모음 (candles.json)
-    kr_rows = build_market("kr", top, fx, inp, stocks=kr_stocks, candles=candles)
+    kr_mkt = index_trend("^KS11")   # v2.9: 시장지수 추세(코스피) — A 시장약세 게이트·B 시장안정 입력
+    kr_rows = build_market("kr", top, fx, inp, stocks=kr_stocks, candles=candles, mkt=kr_mkt)
 
     # 미국 종목: 랭킹을 먼저 받고 영업이익 YoY를 무료로 자동 채움(야후, 키 불필요).
     # 실패하거나 모듈이 없으면 inputs.csv 값으로 폴백 → 절대 안 깨짐.
@@ -504,7 +661,8 @@ def main():
     except Exception as e:
         print(f"  ! US earnings 건너뜀(CSV로 폴백): {e}")
 
-    us_rows = build_market("us", top, fx, inp, stocks=us_stocks, candles=candles)
+    us_mkt = index_trend("^GSPC")   # v2.9: 시장지수 추세(S&P500)
+    us_rows = build_market("us", top, fx, inp, stocks=us_stocks, candles=candles, mkt=us_mkt)
     print("시황 지수 수집 중…")
     idx_candles = {}  # 캔들차트용 지수 OHLC 모음
     market = {"kr": market_brief(kr_rows, "kr", idx_candles), "us": market_brief(us_rows, "us", idx_candles)}
@@ -526,6 +684,8 @@ def main():
         "holiday_notice": holiday_notice,
         "kr_closed": kr_closed, "kr_holiday": kr_hol,
         "us_closed": us_closed, "us_holiday": us_hol,
+        "score_version": "v2.9",
+        "market_trend": {"kr": kr_mkt, "us": us_mkt},
         "market": market,
         "kr": kr_rows,
         "us": us_rows,
@@ -540,3 +700,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+# (engine v2.9)
