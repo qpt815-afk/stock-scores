@@ -1,61 +1,76 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-foreign_flow.py — 한국 종목 '외국인 수급' 자동 수집 (pykrx / KRX 공개 데이터)
+foreign_flow.py — 한국 종목 '외국인 수급' 자동 수집 (네이버 금융, 로그인 불필요)
 ─────────────────────────────────────────────────────────────
-시장위험 점수의 입력인 foreign_flow(sell/neutral/buy)를 매일 자동으로 채운다.
-이전엔 inputs.csv 수동 플래그라 값이 고정·노후화됐는데, 이걸 실데이터로 대체.
+finance.naver.com/item/frgn.naver?code=XXXXXX 의 '외국인 순매매량' 일별 표를 받아,
+최근 5거래일 방향으로 foreign_flow(buy/sell/neutral)를 자동 판정 → 시장위험 점수 입력.
+이전 수동 플래그(고정·노후화)를 실데이터로 대체.
 
-· 최근 5거래일 '외국인 순매수(거래대금)' 방향으로 판정:
-   - 대부분 순매수(+) → buy,  대부분 순매도(-) → sell,  혼조 → neutral
-· 한국 종목(6자리 코드)만 대상. 미국은 해당 개념 없음 → 건드리지 않음.
-· pykrx 미설치/네트워크/파싱 실패는 조용히 건너뜀 → market_risk는 중립으로,
-   파이프라인 전체는 절대 깨지지 않음(다른 enrich 모듈과 동일한 안전 정책).
+· 판정: 최근 5일 중 대부분 순매수(+) → buy / 대부분 순매도(-) → sell / 혼조 → neutral
+· 한국 6자리 코드만. 미국은 해당 개념 없음 → 건드리지 않음.
+· 네트워크/파싱 실패는 조용히 건너뜀(중립 폴백) → 파이프라인 절대 안 깨짐.
+· 표를 '날짜 행'으로만 걸러 위치(7번째 td=외국인 순매매량)로 파싱 → 인코딩/클래스 변화에 강함.
 """
-import datetime, time
+import re, time
+import requests
+from bs4 import BeautifulSoup
+
+UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+      "Referer": "https://finance.naver.com/"}
+FRGN = "https://finance.naver.com/item/frgn.naver?code={code}"
+_DATE = re.compile(r"\d{4}\.\d{2}\.\d{2}")
 
 
 def _classify(vals):
-    """최근 외국인 순매수 일별값 리스트 → 'buy'/'sell'/'neutral'/None."""
-    vals = [v for v in (vals or []) if v is not None][-5:]
+    """최근 외국인 순매수 일별값 → 'buy'/'sell'/'neutral'/None."""
+    vals = [v for v in (vals or []) if v is not None][:5]   # 네이버는 최신순(상단)
     if len(vals) < 3:
         return None
     pos = sum(1 for v in vals if v > 0)
     neg = sum(1 for v in vals if v < 0)
     n = len(vals)
     if pos >= max(3, n - 1):
-        return "buy"        # 최근 대부분 순매수
+        return "buy"
     if neg >= max(3, n - 1):
-        return "sell"       # 최근 대부분 순매도
-    return "neutral"        # 혼조
+        return "sell"
+    return "neutral"
+
+
+def _parse_net(td):
+    """'외국인 순매매량' 셀 → 부호 있는 정수(매수 +, 매도 -)."""
+    txt = td.get_text(strip=True).replace(",", "").replace("\xa0", "").replace("+", "")
+    m = re.search(r"-?\d+", txt)
+    if not m:
+        return 0
+    val = int(m.group())
+    # 텍스트에 '-'가 없는데 파란(매도) 색상 클래스면 음수로 보정
+    if val > 0 and any(k in str(td).lower() for k in ("nv", "blue", "down", "_dn")):
+        val = -val
+    return val
 
 
 def _signal(code):
-    """KRX에서 최근 외국인 순매수 거래대금을 받아 신호 산출."""
-    from pykrx import stock
-    end = datetime.datetime.now()
-    start = end - datetime.timedelta(days=16)   # 주말·휴장 감안 넉넉히
-    df = stock.get_market_trading_value_by_date(
-        start.strftime("%Y%m%d"), end.strftime("%Y%m%d"), code)   # on='순매수'(기본)
-    if df is None or getattr(df, "empty", True):
-        return None
-    fcol = next((c for c in df.columns if "외국인" in str(c)), None)
-    if fcol is None:
-        return None
-    return _classify(df[fcol].tolist())
+    r = requests.get(FRGN.format(code=code), headers=UA, timeout=15)
+    r.encoding = "euc-kr"                       # 네이버 금융 레거시 인코딩
+    soup = BeautifulSoup(r.text, "html.parser")
+    nets = []
+    for tr in soup.find_all("tr"):
+        tds = tr.find_all("td")
+        if len(tds) < 7:
+            continue
+        if not _DATE.match(tds[0].get_text(strip=True)):
+            continue                            # 날짜 행만
+        nets.append(_parse_net(tds[6]))         # 7번째 td = 외국인 순매매량
+    return _classify(nets)
 
 
 def enrich(kr_stocks, inp):
-    """한국 종목 foreign_flow를 자동값으로 덮어쓴다. 채운 종목 수 반환."""
-    try:
-        import pykrx  # noqa: F401
-    except Exception as e:
-        print(f"  ! pykrx 미설치 — 외국인 수급 건너뜀(중립 폴백): {e}")
-        return 0
+    """한국 종목 foreign_flow를 네이버 외국인 수급으로 덮어쓴다. 채운 종목 수 반환."""
     filled = 0
     for s in kr_stocks:
         code = (s.get("ticker") or "").split(".")[0]
-        if not code.isdigit():               # 한국 6자리 코드만
+        if not code.isdigit():                  # 한국 6자리 코드만
             continue
         try:
             sig = _signal(code)
@@ -68,5 +83,5 @@ def enrich(kr_stocks, inp):
         cur["foreign_flow"] = sig
         inp[s["ticker"]] = cur
         filled += 1
-        time.sleep(0.15)
+        time.sleep(0.2)
     return filled
