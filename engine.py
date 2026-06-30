@@ -10,12 +10,12 @@ v2.3 매수타이밍 점수 엔진 (v2.2 → v2.3 재보정: 바닥값 하향 + 
   · 시장위험 '중립' 바닥 하향(공짜 점수 제거), 거래량 무자료 5→4
   · 모멘텀 재설계: 급등 추격 억제, 약보합·얕은 눌림을 최적 타이밍으로
   · 이격도: MA20 -8% 이하 진짜 눌림에만 만점
-  · 게이트 → 등급제: S(강력매수 77+)/A(매수 74+)/B(관심 70+)/관망/과열
-    → '매수가능(S+A)'은 보통날 5~10종목으로 엄선됨 (실서버 DART 데이터로 컷 보정)
+  · 게이트: 종합 60점 이상 = 투자가능(중립 표기). 유형 A 고점 과열은 과열주의.
+    ('강력매수' 등 권유성 표현은 쓰지 않음 — 참고용 정보)
 
 [자동 계산 — 시세에서 바로]
   유형 A/B 분류, 이격도/정배열/거래량(추세건전성 30), 모멘텀, 52주위치/낙폭(유형 B),
-  환율 페널티(-12/-6/0), 이격도 과열 게이트, 등급 컷오프(S/A/B).
+  환율 페널티(-12/-6/0), 이격도 과열 게이트, 60점 투자가능 컷오프.
 
 [유일한 외부 입력 — inputs.csv]
   op_profit_yoy : 최근 4분기 영업이익 YoY(%)  ← 펀더멘털 점수의 입력 (분기 공시 주기, 매일 안 변함)
@@ -286,18 +286,16 @@ def fx_penalty(usdkrw):
     if not usdkrw: return 0
     return -12 if usdkrw >= 1520 else (-6 if usdkrw >= 1490 else 0)
 
-# v2.3 등급 컷오프 (실서버 DART 데이터 기준 재보정; 매수가능 S+A ≈ 보통날 5~10종목)
-GRADE_S, GRADE_A, GRADE_B = 77, 74, 70   # S 강력매수 / A 매수 / B 관심
+# 투자가능 컷오프 (종합점수 이 이상이면 '투자가능' — 단일 기준, 등급제 미사용)
+PASS_CUT = 60
 
 def final_gate(typ, total, dsc):
-    # v2.3: 절대 점수 → 등급. 매수가능 = S(강력매수)+A(매수). B=관심, below=관망, hot=과열.
+    # 종합 60점 이상 = 투자가능(ok). 유형 A 고점 과열은 과열주의(hot). 60 미만 = 관망(below).
+    # '강력매수' 등 권유성 표현은 쓰지 않음 — 점수 기준 충족 여부만 중립적으로 표기.
     if total is None: return "pending"
-    # 유형A가 고점권에서 과도하게 연장(이격도 만점 미달, dsc<=2 → MA20 +10% 초과)이면 추격 금지 → 과열
-    if typ == "A" and dsc <= 2 and total >= GRADE_B: return "hot"
-    if total >= GRADE_S: return "S"
-    if total >= GRADE_A: return "A"
-    if total >= GRADE_B: return "B"
-    return "below"
+    if total < PASS_CUT: return "below"
+    if typ == "A" and dsc <= 2: return "hot"   # 고점 과열 주의(중립 경고, 권유 아님)
+    return "ok"
 
 # ── 한글 여부 판별 ──────────────────────────────────────────
 def _has_korean(s):
