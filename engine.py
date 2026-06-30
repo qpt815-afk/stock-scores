@@ -1,8 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-v2.4 매수타이밍 점수 엔진 (배점 합=100 정규화 + 유형 A 이격도 보정)
+v2.8 매수타이밍 점수 엔진 (배점 합=100 정규화 + 유형 B 회복확인)
 ─────────────────────────────────────────────────────────────
+
+[v2.8 — 유형 B 회복확인(falling knife 방지) + 모멘텀 재설계]
+  · 유형 B에 회복확인(recovery_signal: 종가>MA5 · MA5 상향전환 · 5일수익률>0, 0~3개) 도입.
+    - '싸다' 점수(52주위치+낙폭)를 회복강도로 가중(0.30/0.65/0.85/1.0) → 바닥 확인 없이
+      싸기만 한 추락주는 점수 급감. 회복 신호 0개면 점수와 무관하게 게이트 '관망(below)'.
+  · momentum_B 곡선을 회복 방향으로 뒤집음: 만점을 '보합/약하락' → '완만한 반등(+1.5~5%)'으로.
+    급등(+7%↑)은 추격 과열로 감점. ("떨어질 때 말고 회복할 때 사라"는 목적에 정렬)
+  · 배점 합=100 불변(펀더30·위치22·낙폭18·모멘텀18·시장위험12); 위치·낙폭은 회복 가중 후 값.
 하루 1회 실행 → 한국/미국 시총 상위 종목 시세를 받아 종합점수·등급 계산 → scores.json
 
 [v2.4 — 배점 정규화 + A·B 균형]
@@ -185,6 +193,9 @@ def fetch_history(sym, candle_days=120):
         "close": closes[-1], "prev": closes[-2],
         "chg_pct": (closes[-1]-closes[-2])/closes[-2]*100,
         "ma20": ma(20), "ma60": ma(60) if len(closes) >= 60 else None,
+        "ma5": ma(5),
+        "ma5_prev": sum(closes[-6:-1])/5 if len(closes) >= 6 else None,
+        "ret5": (closes[-1]-closes[-6])/closes[-6]*100 if len(closes) >= 6 else None,
         "hi52": meta.get("fiftyTwoWeekHigh") or max(closes),
         "lo52": meta.get("fiftyTwoWeekLow") or min(closes),
         "vol": vols[-1] if vols else None,
@@ -255,14 +266,30 @@ def momentum_A(chg):
     return 6
 
 def momentum_B(chg):
-    # v2.5: cap 18 (비중 확대). peak는 약보합, 큰 상승은 추격으로 감점.
-    if chg >= 10: return 5
-    if chg >= 6: return 9
-    if chg >= 3: return 14
-    if chg >= 0.5: return 16
-    if chg >= -2: return 18
-    if chg >= -6: return 12
-    return 7
+    # v2.8: cap 18. 회복 방향으로 재설계 — '바닥 찍고 완만히 반등'(+1.5~5%)이 최적 진입.
+    #        보합·하락은 '아직 회복 아님'으로 감점, 급등(+7%↑)은 추격 과열로 감점.
+    #        (v2.5는 보합/약하락에 만점이라 "회복할 때 사라"는 의도와 정반대였음 → 수정)
+    if chg >= 10:  return 4     # 급등 추격 — 과열
+    if chg >= 7:   return 8
+    if chg >= 5:   return 13
+    if chg >= 1.5: return 18    # 완만한 반등 = 최적 진입
+    if chg >= 0.5: return 15
+    if chg >= -1:  return 10    # 보합 — 회복 미확인
+    if chg >= -4:  return 6     # 약하락 — 아직 하락 중
+    return 3                    # 급락 — 명백히 하락
+
+def recovery_signal(h):
+    # v2.8: 유형 B '하락 멈춤 + 회복' 확인. 아래 3개 신호 충족 개수(0~3)로 강도 산출.
+    #   · 종가 > MA5          (단기 평균 위로 복귀)
+    #   · MA5 > 직전 MA5       (단기 평균 상향 전환)
+    #   · 최근 5일 수익률 > 0   (단기 추세 반등)
+    # 0개 = 아직 하락 중 → final_gate에서 '관망(below)' 처리('떨어질 때 사지 않기').
+    # 1~3개 = '싸다' 점수(위치·낙폭)에 가중치(0.65/0.85/1.0)로 반영(아래 build_row).
+    sig = 0
+    if h.get("ma5") and h["close"] > h["ma5"]: sig += 1
+    if h.get("ma5") and h.get("ma5_prev") and h["ma5"] > h["ma5_prev"]: sig += 1
+    if h.get("ret5") is not None and h["ret5"] > 0: sig += 1
+    return sig
 
 def market_risk(flow, high_vol, defensive, import_heavy, usdkrw, scale20=True):
     # v2.5: 비중 축소(20/15→12, 두 유형 공통). 중립 6, 외국인 매수+방어주면 만점 12.
@@ -293,10 +320,12 @@ def fx_penalty(usdkrw):
 # 투자가능 컷오프 (종합점수 이 이상이면 '투자가능' — 단일 기준, 등급제 미사용)
 PASS_CUT = 60
 
-def final_gate(typ, total, dsc):
+def final_gate(typ, total, dsc, rec=None):
     # 종합 60점 이상 = 투자가능(ok). 유형 A 고점 과열은 과열주의(hot). 60 미만 = 관망(below).
+    # 유형 B는 회복 신호 0개(아직 하락 중)면 점수와 무관하게 관망(below) — '떨어질 때 사지 않기'.
     # '강력매수' 등 권유성 표현은 쓰지 않음 — 점수 기준 충족 여부만 중립적으로 표기.
     if total is None: return "pending"
+    if typ == "B" and rec == 0: return "below"  # 회복 미확인 = 낙주의(관망)
     if total < PASS_CUT: return "below"
     if typ == "A" and dsc <= 2: return "hot"   # 고점 과열 주의(중립 경고, 권유 아님)
     return "ok"
@@ -319,6 +348,7 @@ def build_row(stock, market, fx, inp, candles=None):
     typ = classify(h)
     disp = (h["close"]-h["ma20"])/h["ma20"]*100
     dsc = disparity_score(disp)
+    rec = None  # 유형 B 회복확인 강도(0~3); 유형 A는 미사용
 
     if typ == "A":
         f = fundamental(yoy, int(c.get("bonus", 0) or 0))
@@ -331,13 +361,17 @@ def build_row(stock, market, fx, inp, candles=None):
                 "trend_health": trend, "momentum": m, "market_risk": r}
         total = (f + trend + m + r) if f is not None else None
     else:
-        p = pos_52w(h["close"], h["lo52"], h["hi52"])
-        dd = drawdown_score(h["close"], h["hi52"])
+        # v2.8: 회복확인(rec)으로 '싸다' 점수를 가중 — 바닥 확인 없이 싸기만 한 추락주(falling knife)
+        #        에는 위치·낙폭 점수를 깎고, 회복 신호 0개면 final_gate에서 '관망' 처리.
+        rec = recovery_signal(h)
+        mult = {0: 0.30, 1: 0.65, 2: 0.85, 3: 1.0}[rec]
+        p = round(pos_52w(h["close"], h["lo52"], h["hi52"]) * mult)   # 52주 위치(가중)
+        dd = round(drawdown_score(h["close"], h["hi52"]) * mult)      # 낙폭(가중)
         m = momentum_B(h["chg_pct"])
         f = fundamental(yoy)
         r = market_risk(flow, flag("high_vol"), flag("defensive"), False, fx, False)
         comp = {"fundamental": f, "pos_52w": p, "drawdown": dd, "momentum": m, "market_risk": r,
-                "disparity_score": dsc}
+                "recovery": rec, "disparity_score": dsc}
         total = (p + dd + m + f + r) if f is not None else None
 
     fxp = fx_penalty(fx) if market == "us" else 0
@@ -353,11 +387,12 @@ def build_row(stock, market, fx, inp, candles=None):
     return {
         "rank": stock["rank"], "name": name, "ticker": stock["ticker"], "type": typ,
         "close": round(h["close"], 2), "chg_pct": round(h["chg_pct"], 2),
+        "ma5": round(h["ma5"], 1) if h.get("ma5") else None,
         "ma20": round(h["ma20"], 1), "ma60": round(h["ma60"], 1) if h["ma60"] else None,
         "hi52": round(h["hi52"], 2), "lo52": round(h["lo52"], 2),
         "disparity": round(disp, 1), "fx_penalty": fxp,
         **comp, "total": round(total) if total is not None else None,
-        "gate": final_gate(typ, total, dsc),
+        "gate": final_gate(typ, total, dsc, rec),
     }
 
 def build_market(market, top, fx, inp, stocks=None, candles=None):
