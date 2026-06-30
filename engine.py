@@ -1,8 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-v2.9 매수타이밍 점수 엔진 (A 추세추종 / B 바닥회복 / NONE 검토제외 + 보수적 게이트)
+v3.0 매수타이밍 점수 엔진 (A 추세추종 / B 바닥회복 / C 박스권·돌파대기 / EXCLUDE 검토제외)
 ─────────────────────────────────────────────────────────────
+
+[v3.0 — NONE을 C(관찰후보)와 EXCLUDE(검토제외)로 분리]
+  · 분류 4분기: A·B는 v2.9와 동일, 기존 NONE 중 '박스권 수렴·돌파대기' 조건을 만족하면 C로 승격,
+    나머지는 EXCLUDE. (classify_v3)
+  · C유형(합100): 펀더15·가격안정20·박스20·수렴15·거래량15·시장10·손절5. 기본은 관찰후보 —
+    거래량 동반 박스 상단 돌파일 때만 기준충족(ok), 보통은 수렴대기(setup)/돌파대기(breakout_watch).
+  · EXCLUDE: 사용자 화면용 total=0으로 덮어쓰고(raw_total_before_exclude에 원점수 보존),
+    gate=exclude/검토제외 + exclude_reason_code(NO_STRATEGY_MATCH·BROKEN_LOW·STOP_LOSS_TOO_WIDE 등).
+  · 신규 게이트: setup(수렴대기)·breakout_watch(돌파대기)·exclude(검토제외). final_gate_v3 우선순위 적용.
+  · scores.json에 type_v3_0·gate_v3_0·c_*·box/range/vol 지표·raw_total_before_exclude 등 신규 필드 추가
+    (기존 v2.9 type/gate/type_v2_9/항목 필드는 호환 유지). 프론트는 display_label 우선 표시.
 
 [v2.9 — 분류 3분기·B 게이트 강화·손절거리·시장추세·중립 라벨]
   · 분류 A/B/NONE: A 조건에 '현재가 >= 20일선 x 0.97' 추가, B는 '낙폭>=20% & 52주위치<=60%'
@@ -211,6 +222,7 @@ def fetch_history(sym, candle_days=120):
         "hi52": meta.get("fiftyTwoWeekHigh") or max(closes),
         "lo52": meta.get("fiftyTwoWeekLow") or min(closes),
         "vol": vols[-1] if vols else None,
+        "avg_vol5": (sum(vols[-5:])/5) if len(vols) >= 5 else None,
         "avg_vol20": (sum(vols[-20:])/20) if len(vols) >= 20 else None,
         "ohlc": ohlc[-candle_days:],
         "yahoo_name": (meta.get("shortName") or "").strip(),
@@ -461,6 +473,139 @@ def final_gate(typ, total, disp_pct, rec, slp, mkt_weak):
 def _has_korean(s):
     return any('가' <= c <= '힣' for c in (s or ""))
 
+# ════════════════════════════════════════════════════════════════
+# v3.0 — C유형(박스권/수렴/돌파대기) 신설 + EXCLUDE(검토제외, total 0) 4분류
+# ════════════════════════════════════════════════════════════════
+def box_vol_metrics(h):
+    """OHLC·거래량에서 박스권/변동성/거래량 지표 계산."""
+    ohlc = h.get("ohlc") or []; close = h["close"]
+    o = {"recent_high_20d": None, "recent_low_20d": None, "previous_high_20d": None,
+         "range20_pct": None, "range60_pct": None, "box_position_pct": None, "ma_spread_pct": None,
+         "vol_ratio": None, "vol5_ratio": None, "near_box_top": False, "breakout_signal": False,
+         "volume_compression": False, "broke_low": False}
+    if h.get("ma20") and h.get("ma60") and close:
+        o["ma_spread_pct"] = round(abs(h["ma20"]-h["ma60"])/close*100, 2)
+    last20 = ohlc[-20:]
+    if len(last20) >= 10:
+        rh = max(c[1] for c in last20); rl = min(c[2] for c in last20)
+        o["recent_high_20d"] = round(rh, 2); o["recent_low_20d"] = round(rl, 2)
+        if rh > rl: o["box_position_pct"] = round((close-rl)/(rh-rl)*100, 1)
+        if close: o["range20_pct"] = round((rh-rl)/close*100, 2)
+        o["broke_low"] = close < rl
+    prev20 = ohlc[-21:-1]
+    if len(prev20) >= 10:
+        ph = max(c[1] for c in prev20); o["previous_high_20d"] = round(ph, 2)
+        o["near_box_top"] = close >= ph*0.95
+    last60 = ohlc[-60:]
+    if len(last60) >= 30 and close:
+        o["range60_pct"] = round((max(c[1] for c in last60)-min(c[2] for c in last60))/close*100, 2)
+    av20 = h.get("avg_vol20"); av5 = h.get("avg_vol5"); tv = h.get("vol")
+    if av20 and tv: o["vol_ratio"] = round(tv/av20, 2)
+    if av20 and av5: o["vol5_ratio"] = round(av5/av20, 2)
+    if o["vol5_ratio"] is not None: o["volume_compression"] = o["vol5_ratio"] <= 0.8
+    if o["previous_high_20d"] and o["vol_ratio"] is not None:
+        o["breakout_signal"] = (close > o["previous_high_20d"] and o["vol_ratio"] >= 1.2)
+    return o
+
+def classify_v3(h, m, slp):
+    """A / B / C / EXCLUDE. A·B는 v2.9와 동일, NONE을 C(후보)와 EXCLUDE로 분리."""
+    hi, lo, close, ma20, ma60 = h.get("hi52"), h.get("lo52"), h["close"], h["ma20"], h.get("ma60")
+    if hi and close >= hi*0.80 and ma60 and ma20 > ma60 and close >= ma20*0.97:
+        return "A"
+    dd = (hi-close)/hi*100 if hi else 0.0
+    pos = (close-lo)/(hi-lo)*100 if (hi and lo is not None and hi != lo) else 50.0
+    disp = (close-ma20)/ma20*100 if ma20 else 0.0
+    if dd >= 20 and pos <= 60:
+        return "B"
+    r20 = m.get("range20_pct"); rl = m.get("recent_low_20d"); ret5 = h.get("ret5"); msp = m.get("ma_spread_pct")
+    if (30 <= pos <= 85 and 5 <= dd <= 30 and abs(disp) <= 8 and (ret5 is None or ret5 > -5)
+            and rl is not None and close >= rl*1.02 and r20 is not None and r20 <= 20
+            and msp is not None and msp <= 15 and (slp is None or slp <= 12)):
+        return "C"
+    return "EXCLUDE"
+
+# C유형 점수 helper (합 100: 펀더15·가격안정20·박스20·수렴15·거래량15·시장10·손절5)
+def c_fundamental(yoy, bonus=0):
+    f = fundamental(yoy, bonus); return None if f is None else round(f/20*15)
+def c_price_stability(disp):
+    a = abs(disp); return 20 if a <= 3 else 16 if a <= 5 else 12 if a <= 8 else 6 if a <= 12 else 2
+def c_box(close, rl, bp):
+    if rl is None or close < rl: return 0
+    if close >= rl*1.05 and bp is not None and 40 <= bp <= 85: return 20
+    if close >= rl*1.03: return 15
+    if close >= rl: return 8
+    return 0
+def c_contraction(r20, r60):
+    if r20 is None: return 0
+    s = 15 if r20 <= 10 else 12 if r20 <= 15 else 8 if r20 <= 20 else 4 if r20 <= 25 else 0
+    if r60 is not None and r20 <= r60*0.75: s = min(15, s+2)
+    return s
+def c_volume_setup(m, up):
+    vr = m.get("vol_ratio"); v5 = m.get("vol5_ratio")
+    if (not up) and vr is not None and vr >= 1.5: return 0   # 하락일 거래량 급증
+    if m.get("breakout_signal") and vr is not None and vr >= 1.2: return 15
+    if m.get("near_box_top") and vr is not None and vr >= 0.9: return 12
+    if v5 is not None and v5 <= 0.8: return 10               # 거래량 압축
+    return 6
+def c_market_stability(mkt):
+    return 5 if not mkt else round(mkt["score"]/15*10)
+def c_stop_risk(slp):
+    if slp is None: return 1
+    return 5 if slp <= 5 else 4 if slp <= 8 else 2 if slp <= 10 else 1 if slp <= 12 else 0
+
+GATE_LABEL_V3 = {"ok":"기준충족","below":"대기","watch":"회복초기","hot":"과열주의","pending":"데이터대기",
+                 "risk":"위험주의","exclude":"검토제외","setup":"수렴대기","breakout_watch":"돌파대기"}
+LEGACY_GATE_V3 = {"ok":"ok","hot":"hot","pending":"pending","below":"below","watch":"below",
+                  "risk":"below","exclude":"below","setup":"below","breakout_watch":"below"}
+# v2.9 필드(gate_v2_9)용: v3.0 신규 코드를 v2.9 어휘로 매핑
+V29_GATE = {"ok":"ok","below":"below","watch":"watch","hot":"hot","pending":"pending","risk":"risk",
+            "exclude":"none","setup":"none","breakout_watch":"none"}
+EXCLUDE_TEXT = {"NO_STRATEGY_MATCH":"A/B/C 조건 모두 불충족","WEAK_TREND":"추세·회복·수렴 조건 모두 약함",
+                "BROKEN_LOW":"최근 20일 저점 이탈","STOP_LOSS_TOO_WIDE":"손절폭 과대로 검토제외",
+                "VOLATILITY_TOO_HIGH":"변동성 과대로 검토제외","DATA_INSUFFICIENT":"핵심 데이터 부족",
+                "MARKET_WEAK_AND_NO_SETUP":"시장 약세 및 종목 조건 미달"}
+def exclude_reason(h, m, slp, mkt_weak):
+    if m.get("recent_low_20d") is None or m.get("range20_pct") is None or h.get("ma60") is None:
+        return "DATA_INSUFFICIENT", EXCLUDE_TEXT["DATA_INSUFFICIENT"]
+    if m.get("broke_low"): return "BROKEN_LOW", EXCLUDE_TEXT["BROKEN_LOW"]
+    if slp is not None and slp > 15: return "STOP_LOSS_TOO_WIDE", EXCLUDE_TEXT["STOP_LOSS_TOO_WIDE"]
+    if m.get("range20_pct") is not None and m["range20_pct"] > 30: return "VOLATILITY_TOO_HIGH", EXCLUDE_TEXT["VOLATILITY_TOO_HIGH"]
+    if mkt_weak: return "MARKET_WEAK_AND_NO_SETUP", EXCLUDE_TEXT["MARKET_WEAK_AND_NO_SETUP"]
+    return "NO_STRATEGY_MATCH", EXCLUDE_TEXT["NO_STRATEGY_MATCH"]
+
+def final_gate_v3(typ3, total, h, m, rec, slp, mkt_weak, up, disp):
+    """v3.0 게이트 — (code, 표시명, 사유). EXCLUDE는 build_row에서 별도 처리."""
+    if total is None:
+        return "pending", GATE_LABEL_V3["pending"], "영업이익 YoY 데이터 없음"
+    if typ3 == "B":
+        if rec == 0: return "below", GATE_LABEL_V3["below"], "회복 신호 0개 — 아직 하락 중"
+        if rec == 1: return "watch", GATE_LABEL_V3["watch"], "회복 신호 1개 — 회복초기, 기준충족 보류"
+        if slp is not None and slp > 10: return "risk", "손절폭과대", f"회복은 확인됐으나 손절폭 {slp}%가 10% 초과"
+        if total >= 70 and rec >= 2 and (slp is not None and slp <= 10):
+            return "ok", GATE_LABEL_V3["ok"], f"B유형 회복확인({rec}개)·점수({total})·손절폭 조건 충족"
+        if slp is None: return "below", GATE_LABEL_V3["below"], "손절폭 데이터 부족 — 기준충족 보류"
+        return "below", GATE_LABEL_V3["below"], f"B유형 기준점수(70) 미달 (현재 {total})"
+    if typ3 == "A":
+        if disp is not None and disp > 18: return "hot", GATE_LABEL_V3["hot"], "20일선 대비 +18% 초과 — 고점 추격 위험"
+        if mkt_weak: return "watch", "시장약세", "시장지수 약세 — 기준충족 보류"
+        if total >= 60: return "ok", GATE_LABEL_V3["ok"], f"A유형 추세·점수({total}) 기준 충족"
+        return "below", GATE_LABEL_V3["below"], f"A유형 기준점수(60) 미달 (현재 {total})"
+    if typ3 == "C":
+        close = h["close"]; ma20 = h["ma20"]; ret5 = h.get("ret5"); vr = m.get("vol_ratio")
+        rl = m.get("recent_low_20d"); r20 = m.get("range20_pct")
+        if m.get("broke_low"): return "risk", GATE_LABEL_V3["risk"], "C유형 후보였으나 최근 20일 저점 이탈"
+        if slp is not None and slp > 12: return "risk", GATE_LABEL_V3["risk"], "C유형 후보였으나 손절폭 12% 초과"
+        if ret5 is not None and ret5 <= -5: return "risk", GATE_LABEL_V3["risk"], "C유형 후보였으나 최근 5일 급락"
+        if (not up) and vr is not None and vr >= 1.5: return "risk", GATE_LABEL_V3["risk"], "C유형 후보였으나 하락일 거래량 급증"
+        if total >= 75 and m.get("breakout_signal") and vr is not None and vr >= 1.2 and close > ma20 and (slp is not None and slp <= 10) and not mkt_weak:
+            return "ok", GATE_LABEL_V3["ok"], "C유형 박스권 돌파·거래량 조건 충족"
+        if total >= 70 and m.get("near_box_top") and (slp is None or slp <= 12) and not mkt_weak:
+            return "breakout_watch", GATE_LABEL_V3["breakout_watch"], "C유형 박스권 상단 접근 — 돌파 확인 대기"
+        if total >= 65 and r20 is not None and r20 <= 20 and rl is not None and close >= rl*1.03 and (slp is None or slp <= 12):
+            return "setup", GATE_LABEL_V3["setup"], "C유형 박스권 수렴 중 — 방향 확인 대기"
+        return "below", GATE_LABEL_V3["below"], "C유형 조건은 충족했으나 수렴·돌파 기준 미달"
+    return "below", GATE_LABEL_V3["below"], "기준 미달"
+
 # ── 한 종목 ─────────────────────────────────────────────────
 def build_row(stock, market, fx, inp, candles=None, mkt=None):
     h = fetch_history(stock["ticker"])
@@ -471,63 +616,87 @@ def build_row(stock, market, fx, inp, candles=None, mkt=None):
     yoy = float(c["op_profit_yoy"]) if c.get("op_profit_yoy") not in (None, "", "NA") else None
     flow = c.get("foreign_flow", "neutral") or "neutral"
     flag = lambda k: str(c.get(k, "0")).strip() in ("1","true","True")
+    bonus = int(c.get("bonus", 0) or 0)
     up = h["chg_pct"] >= 0
-    typ = classify(h)                                  # A / B / NONE
     disp = (h["close"]-h["ma20"])/h["ma20"]*100
     dsc = disparity_score(disp)
-    f = fundamental(yoy, int(c.get("bonus", 0) or 0))
+    f = fundamental(yoy, bonus)
     rl20, slp = stop_loss_calc(h["close"], h.get("ohlc"))
     rec_n = recovery_signal(h)
     rec_items = recovery_items(h)
     mkt_weak = bool(mkt and mkt.get("weak"))
+    m = box_vol_metrics(h)
+    typ3 = classify_v3(h, m, slp)                      # A / B / C / EXCLUDE
 
-    if typ == "A":
-        al = alignment_score(h["close"], h["ma20"], h["ma60"])
-        v = volume_score(h["vol"], h["avg_vol20"], up)
-        mt = mkt["score"] if mkt else 8                # 시장/업종 추세 (cap 15)
-        m = momentum_A(h["chg_pct"])
-        r = market_risk(flow, flag("high_vol"), flag("defensive"), flag("import_heavy"), fx, True)
-        trend = dsc + al + v
-        comp = {"fundamental": f, "market_trend": mt, "disparity_score": dsc, "alignment": al,
-                "volume": v, "trend_health": trend, "momentum": m, "market_risk": r, "recovery": rec_n}
-        total = (f + mt + dsc + al + v + m + r) if f is not None else None
-    else:  # B 또는 NONE — 동일 산식, 게이트에서만 구분
-        pa = price_attraction_B(h["close"], h["lo52"], h["hi52"])     # 가격매력 cap25
-        rs = recovery_score_B(rec_n)                                  # 회복확인 cap25
-        vf = volume_flow_B(h["vol"], h["avg_vol20"], up, flow)        # 거래량/수급반전 cap10
-        ms = market_stability_B(mkt)                                  # 시장/업종 안정 cap10
-        sl = stop_loss_score_B(slp)                                   # 손익비/손절거리 cap10
-        comp = {"fundamental": f, "price_attraction": pa, "recovery_score": rs,
-                "volume_flow": vf, "market_stability": ms, "stop_loss_score": sl,
-                "recovery": rec_n, "disparity_score": dsc,
-                # 레거시 호환(기존 프론트가 읽던 키) — 참고용 원점수
-                "pos_52w": pos_52w(h["close"], h["lo52"], h["hi52"]),
+    # 레거시 B 표시 필드(기존 프론트가 읽던 키) — B·C·EXCLUDE 행에 부착
+    legacy_b = {"pos_52w": pos_52w(h["close"], h["lo52"], h["hi52"]),
                 "drawdown": drawdown_score(h["close"], h["hi52"]),
                 "momentum": momentum_B(h["chg_pct"]),
                 "market_risk": market_risk(flow, flag("high_vol"), flag("defensive"), False, fx, False)}
+    cf = {"c_score_total": None, "c_price_stability_score": None, "c_box_score": None,
+          "c_contraction_score": None, "c_volume_setup_score": None,
+          "c_market_stability_score": None, "c_stop_risk_score": None}
+    raw_before = None; exc_code = None; exc_text = None; c_reason = None
+
+    if typ3 == "A":
+        al = alignment_score(h["close"], h["ma20"], h["ma60"]); v = volume_score(h["vol"], h["avg_vol20"], up)
+        mt = mkt["score"] if mkt else 8; mom = momentum_A(h["chg_pct"])
+        r = market_risk(flow, flag("high_vol"), flag("defensive"), flag("import_heavy"), fx, True)
+        comp = {"fundamental": f, "market_trend": mt, "disparity_score": dsc, "alignment": al,
+                "volume": v, "trend_health": dsc+al+v, "momentum": mom, "market_risk": r, "recovery": rec_n}
+        total = (f + mt + dsc + al + v + mom + r) if f is not None else None
+    elif typ3 == "B":
+        pa = price_attraction_B(h["close"], h["lo52"], h["hi52"]); rs = recovery_score_B(rec_n)
+        vf = volume_flow_B(h["vol"], h["avg_vol20"], up, flow); ms = market_stability_B(mkt); sl = stop_loss_score_B(slp)
+        comp = {"fundamental": f, "price_attraction": pa, "recovery_score": rs, "volume_flow": vf,
+                "market_stability": ms, "stop_loss_score": sl, "recovery": rec_n, "disparity_score": dsc, **legacy_b}
         total = (f + pa + rs + vf + ms + sl) if f is not None else None
+    elif typ3 == "C":
+        cfd = c_fundamental(yoy, bonus); cps = c_price_stability(disp)
+        cbx = c_box(h["close"], m["recent_low_20d"], m["box_position_pct"])
+        ccon = c_contraction(m["range20_pct"], m["range60_pct"]); cvol = c_volume_setup(m, up)
+        cms = c_market_stability(mkt); csr = c_stop_risk(slp)
+        ctot = (cfd + cps + cbx + ccon + cvol + csr + cms) if cfd is not None else None
+        cf = {"c_score_total": ctot, "c_price_stability_score": cps, "c_box_score": cbx,
+              "c_contraction_score": ccon, "c_volume_setup_score": cvol,
+              "c_market_stability_score": cms, "c_stop_risk_score": csr}
+        comp = {"fundamental": cfd, "disparity_score": dsc, "recovery": rec_n, **legacy_b}
+        total = ctot
+    else:  # EXCLUDE — C 점수표로 억지 평가하지 않고, v2.9식 점수만 raw로 보존
+        if f is not None:
+            _raw = (f + price_attraction_B(h["close"], h["lo52"], h["hi52"]) + recovery_score_B(rec_n)
+                    + volume_flow_B(h["vol"], h["avg_vol20"], up, flow) + market_stability_B(mkt) + stop_loss_score_B(slp))
+            _raw += (fx_penalty(fx) if market == "us" else 0)
+            raw_before = round(_raw)
+        exc_code, exc_text = exclude_reason(h, m, slp, mkt_weak)
+        comp = {"fundamental": f, "disparity_score": dsc, "recovery": rec_n, **legacy_b}
+        total = 0 if f is not None else None           # YoY 없으면 None→pending
 
     fxp = fx_penalty(fx) if market == "us" else 0
-    if total is not None: total += fxp
-    # 보수적 상한: B 회복 1개 → 59, A 시장약세 → 69
-    if total is not None:
-        if typ == "B" and rec_n == 1: total = min(total, 59)
-        if typ == "A" and mkt_weak:   total = min(total, 69)
+    if typ3 in ("A","B","C") and total is not None: total += fxp
+    if total is not None:                              # 보수적 상한
+        if typ3 == "B" and rec_n == 1: total = min(total, 59)
+        if typ3 == "A" and mkt_weak:   total = min(total, 69)
 
-    code, label, reason = final_gate(typ, total, (disp if typ == "A" else None), rec_n, slp, mkt_weak)
+    if typ3 == "EXCLUDE" and f is not None:
+        code, label, reason = "exclude", GATE_LABEL_V3["exclude"], exc_text
+        total = 0                                       # EXCLUDE 최종 0점 덮어쓰기
+    else:
+        code, label, reason = final_gate_v3(typ3, total, h, m, rec_n, slp, mkt_weak, up, disp)
+    if typ3 == "C": c_reason = reason
+
     slg, slr = stop_loss_gate(slp)
     mtg = "weak" if mkt_weak else ("strong" if (mkt and mkt.get("score", 0) >= 12) else "neutral")
+    type_v29 = {"A":"A","B":"B","C":"NONE","EXCLUDE":"NONE"}[typ3]
 
-    # 한국 종목: KR_NAMES 적용 후에도 한글이 없으면 Yahoo shortName으로 대체
     name = stock["name"]
     if market == "kr" and not _has_korean(name):
         yn = h.get("yahoo_name", "")
-        if _has_korean(yn):
-            name = yn
+        if _has_korean(yn): name = yn
 
-    return {
+    row = {
         "rank": stock["rank"], "name": name, "ticker": stock["ticker"],
-        "type": ("A" if typ == "A" else "B"),   # 레거시 호환(A/B). 3분류는 type_v2_9 참고
+        "type": ("A" if typ3 == "A" else "B"),   # 레거시 호환(A/B). 4분류는 type_v3_0
         "close": round(h["close"], 2), "chg_pct": round(h["chg_pct"], 2),
         "ma5": round(h["ma5"], 1) if h.get("ma5") else None,
         "ma20": round(h["ma20"], 1), "ma60": round(h["ma60"], 1) if h["ma60"] else None,
@@ -535,10 +704,10 @@ def build_row(stock, market, fx, inp, candles=None, mkt=None):
         "disparity": round(disp, 1), "fx_penalty": fxp,
         **comp,
         "total": round(total) if total is not None else None,
-        "gate": LEGACY_GATE.get(code, "below"),   # 기존 프론트 호환(ok/below/hot/pending)
-        # ── v2.9 신규 필드 ──
-        "type_v2_9": typ,
-        "gate_v2_9": code,
+        "gate": LEGACY_GATE_V3.get(code, "below"),   # 기존 프론트 호환(ok/below/hot/pending)
+        # ── v2.9 호환 필드 (유지) ──
+        "type_v2_9": type_v29,
+        "gate_v2_9": V29_GATE.get(code, "none"),
         "display_label": label,
         "gate_reason": reason,
         "recovery_signal_count": rec_n,
@@ -548,8 +717,24 @@ def build_row(stock, market, fx, inp, candles=None, mkt=None):
         "stop_loss_gate": slg,
         "stop_loss_reason": slr,
         "market_trend_gate": mtg,
-        "score_version": "v2.9",
+        # ── v3.0 신규 필드 ──
+        "type_v3_0": typ3,
+        "gate_v3_0": code,
+        "score_version": "v3.0",
+        **cf,
+        "recent_high_20d": m["recent_high_20d"], "previous_high_20d": m["previous_high_20d"],
+        "range20_pct": m["range20_pct"], "range60_pct": m["range60_pct"],
+        "box_position_pct": m["box_position_pct"], "ma_spread_pct": m["ma_spread_pct"],
+        "vol_ratio": m["vol_ratio"], "vol5_ratio": m["vol5_ratio"],
+        "avg_vol5": round(h["avg_vol5"]) if h.get("avg_vol5") else None,
+        "avg_vol20": round(h["avg_vol20"]) if h.get("avg_vol20") else None,
+        "volume_compression": m["volume_compression"], "near_box_top": m["near_box_top"],
+        "breakout_signal": m["breakout_signal"],
+        "c_gate_reason": c_reason,
+        "raw_total_before_exclude": raw_before,
+        "exclude_reason_code": exc_code, "exclude_reason": exc_text,
     }
+    return row
 
 def build_market(market, top, fx, inp, stocks=None, candles=None, mkt=None):
     rows = []
@@ -684,7 +869,7 @@ def main():
         "holiday_notice": holiday_notice,
         "kr_closed": kr_closed, "kr_holiday": kr_hol,
         "us_closed": us_closed, "us_holiday": us_hol,
-        "score_version": "v2.9",
+        "score_version": "v3.0",
         "market_trend": {"kr": kr_mkt, "us": us_mkt},
         "market": market,
         "kr": kr_rows,

@@ -615,7 +615,12 @@ const STATUS = {
     icon: "…",
     color: "#5d626b",
     bg: "rgba(120,126,135,.06)"
-  }
+  },
+  setup: { label: "수렴대기", icon: "◇", color: "#5b8def", bg: "rgba(91,141,239,.12)" },
+  breakout_watch: { label: "돌파대기", icon: "△", color: "#d2a64e", bg: "rgba(210,166,78,.14)" },
+  watch: { label: "회복초기", icon: "·", color: "#6b7280", bg: "rgba(120,126,135,.08)" },
+  risk: { label: "위험주의", icon: "⚠", color: "#e2694e", bg: "rgba(226,105,78,.12)" },
+  exclude: { label: "검토제외", icon: "✕", color: "#5a606b", bg: "rgba(120,126,135,.05)" }
 };
 const isBuyable = g => g === "ok" || g === "hot";
 const chgColor = c => c >= 0 ? "#ec4d4d" : "#4d82e6";
@@ -924,10 +929,11 @@ function App() {
     }
   }, scored.map(x => {
     const id = `${market}-${x.rank}`;
-    const s = STATUS[x.gate] || STATUS.pending;
+    const s = STATUS[x.gate_v3_0] || STATUS[x.gate] || STATUS.pending;
     const star = x.disparity < -8;
-    const drv = x.total == null ? `유형${x.type} · 데이터대기` : x.type === "A" ? `유형A · 이격도 ${x.disparity_score}점 (${x.disparity}%)` : x.type_v2_9 === "NONE" ? `검토제외 · 회복 ${x.recovery_signal_count ?? 0}/3` : `유형B · 회복 ${x.recovery_signal_count ?? 0}/3 · 손절 ${x.stop_loss_pct != null ? x.stop_loss_pct + "%" : "—"}`;
-    const metrics = x.type === "A" ? [["펀더", x.fundamental ?? "—", 20], ["시장추세", x.market_trend ?? "—", 15], ["정배열", x.alignment ?? "—", 15], ["이격도", x.disparity_score ?? "—", 15], ["거래량", x.volume ?? "—", 15], ["모멘텀", x.momentum ?? "—", 10], ["수급위험", x.market_risk ?? "—", 10]] : [["펀더", x.fundamental ?? "—", 20], ["가격매력", x.price_attraction ?? "—", 25], ["회복확인", x.recovery_score ?? "—", 25], ["수급반전", x.volume_flow ?? "—", 10], ["시장안정", x.market_stability ?? "—", 10], ["손절", x.stop_loss_score ?? "—", 10]];
+    const tv3 = x.type_v3_0 || x.type;
+    const drv = x.total == null ? `데이터대기` : tv3 === "A" ? `유형A · 이격도 ${x.disparity_score}점 (${x.disparity}%)` : tv3 === "B" ? `유형B · 회복 ${x.recovery_signal_count ?? 0}/3 · 손절 ${x.stop_loss_pct != null ? x.stop_loss_pct + "%" : "—"}` : tv3 === "C" ? `유형C 박스권 · 폭 ${x.range20_pct ?? "—"}% · 위치 ${x.box_position_pct ?? "—"}%` : `검토제외 · ${x.exclude_reason || "조건 미달"}`;
+    const metrics = tv3 === "A" ? [["펀더", x.fundamental ?? "—", 20], ["시장추세", x.market_trend ?? "—", 15], ["정배열", x.alignment ?? "—", 15], ["이격도", x.disparity_score ?? "—", 15], ["거래량", x.volume ?? "—", 15], ["모멘텀", x.momentum ?? "—", 10], ["수급위험", x.market_risk ?? "—", 10]] : tv3 === "C" ? [["펀더", x.fundamental ?? "—", 15], ["가격안정", x.c_price_stability_score ?? "—", 20], ["박스안정", x.c_box_score ?? "—", 20], ["변동성수렴", x.c_contraction_score ?? "—", 15], ["거래량/돌파", x.c_volume_setup_score ?? "—", 15], ["시장안정", x.c_market_stability_score ?? "—", 10], ["손절", x.c_stop_risk_score ?? "—", 5]] : [["펀더", x.fundamental ?? "—", 20], ["가격매력", x.price_attraction ?? "—", 25], ["회복확인", x.recovery_score ?? "—", 25], ["수급반전", x.volume_flow ?? "—", 10], ["시장안정", x.market_stability ?? "—", 10], ["손절", x.stop_loss_score ?? "—", 10]];
     return /*#__PURE__*/React.createElement("div", {
       key: id
     }, /*#__PURE__*/React.createElement("div", {
@@ -953,12 +959,12 @@ function App() {
       className: "name"
     }, x.name), /*#__PURE__*/React.createElement("span", {
       className: `typetag ${x.type === "A" ? "ta" : "tb"}`
-    }, x.type_v2_9 || x.type)), /*#__PURE__*/React.createElement("div", {
+    }, x.type_v3_0 || x.type)), /*#__PURE__*/React.createElement("div", {
       className: "drv"
     }, drv)), /*#__PURE__*/React.createElement("div", {
       className: "right"
     }, /*#__PURE__*/React.createElement(Pill, {
-      gate: x.gate,
+      gate: x.gate_v3_0 || x.gate,
       label: x.display_label
     }), /*#__PURE__*/React.createElement("span", {
       className: "chg",
