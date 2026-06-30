@@ -245,42 +245,35 @@ def volume_score(vol, avg20, up):
     return 3
 
 def momentum_A(chg):
-    # v2.4: cap 10. 추격 억제, 약보합/얕은 눌림이 최적.
-    if chg >= 8: return 3
-    if chg >= 4: return 5
-    if chg >= 1: return 7
-    if chg >= -1: return 9
-    if chg >= -4: return 10
-    if chg >= -8: return 7
-    return 4
+    # v2.5: cap 18 (비중 확대). 추격 억제, 약보합/얕은 눌림이 최적.
+    if chg >= 8: return 4
+    if chg >= 4: return 7
+    if chg >= 1: return 11
+    if chg >= -1: return 15
+    if chg >= -4: return 18
+    if chg >= -8: return 11
+    return 6
 
 def momentum_B(chg):
-    # v2.4: cap 15. peak는 약보합, 큰 상승은 추격으로 감점.
+    # v2.5: cap 18 (비중 확대). peak는 약보합, 큰 상승은 추격으로 감점.
     if chg >= 10: return 5
     if chg >= 6: return 9
-    if chg >= 3: return 12
-    if chg >= 0.5: return 14
-    if chg >= -2: return 15
-    if chg >= -6: return 11
+    if chg >= 3: return 14
+    if chg >= 0.5: return 16
+    if chg >= -2: return 18
+    if chg >= -6: return 12
     return 7
 
 def market_risk(flow, high_vol, defensive, import_heavy, usdkrw, scale20=True):
-    # v2.4: 상한(20/15)에 도달 가능하도록 스윙 확대 — 외국인 매수 + 방어주면 만점.
-    #       중립은 ~50%(공짜 만점은 아님). 배점 합=100이 실제로 성립하게.
-    if scale20:
-        s = 10
-        if flow == "sell": s -= 5
-        elif flow == "buy": s += 6
-        if high_vol: s -= 5
-        if defensive: s += 4
-        if import_heavy and usdkrw and usdkrw >= 1520: s -= 4
-        return max(0, min(20, s))
-    s = 7
+    # v2.5: 비중 축소(20/15→12, 두 유형 공통). 중립 6, 외국인 매수+방어주면 만점 12.
+    #       외국인 수급(flow)은 foreign_flow.py로 매일 자동 수집 → 더 이상 고정값 아님.
+    s = 6
     if flow == "sell": s -= 4
-    elif flow == "buy": s += 5
+    elif flow == "buy": s += 4
     if high_vol: s -= 4
-    if defensive: s += 3
-    return max(0, min(15, s))
+    if defensive: s += 2
+    if scale20 and import_heavy and usdkrw and usdkrw >= 1520: s -= 3
+    return max(0, min(12, s))
 
 def pos_52w(price, lo, hi):
     # v2.4: cap 22.
@@ -452,6 +445,16 @@ def main():
     except Exception as e:
         print(f"  ! 한국 Yahoo 폴백 건너뜀: {e}")
 
+    # 외국인 수급 자동 수집(KRX/pykrx) → foreign_flow 매일 갱신. 실패 시 중립 폴백(안 깨짐).
+    kr_flow = 0
+    try:
+        import foreign_flow
+        kr_flow = foreign_flow.enrich(kr_stocks, inp)
+        if kr_flow:
+            print(f"외국인 수급: 한국 {kr_flow}종목 자동 반영")
+    except Exception as e:
+        print(f"  ! 외국인 수급 건너뜀: {e}")
+
     candles = {}  # 캔들차트용 종목 OHLC 모음 (candles.json)
     kr_rows = build_market("kr", top, fx, inp, stocks=kr_stocks, candles=candles)
 
@@ -483,6 +486,7 @@ def main():
         "fx_usdkrw": fx, "fx_penalty": fx_penalty(fx),
         "dart_filled_kr": dart_filled,
         "yahoo_filled_kr": kr_yahoo,
+        "foreign_flow_kr": kr_flow,
         "us_filled": us_filled,
         "holiday_notice": holiday_notice,
         "kr_closed": kr_closed, "kr_holiday": kr_hol,
