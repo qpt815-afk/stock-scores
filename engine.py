@@ -290,6 +290,15 @@ def fx_penalty(usdkrw):
     if not usdkrw: return 0
     return -12 if usdkrw >= 1520 else (-6 if usdkrw >= 1490 else 0)
 
+def fx_market_risk(usdkrw):
+    # v2.6: 미국 종목의 '시장위험' = 환율(원화환산) 항목. 외부 페널티 폐지 → 총점이 100 안에 들어옴.
+    #       원화 강세(환율 낮음)=가점(만점 12), 약세=0. cap 12 (KR 시장위험과 동일 비중).
+    #       → 미국도 깔끔한 0~100. 환율이 떨어져도 100을 넘지 않고, 환율 효과가 100 안에서 움직임.
+    if not usdkrw: return 6
+    if usdkrw >= 1520: return 0
+    if usdkrw >= 1490: return 6
+    return 12
+
 # 투자가능 컷오프 (종합점수 이 이상이면 '투자가능' — 단일 기준, 등급제 미사용)
 PASS_CUT = 60
 
@@ -326,7 +335,7 @@ def build_row(stock, market, fx, inp, candles=None):
         v = volume_score(h["vol"], h["avg_vol20"], up)
         trend = dsc + al + v
         m = momentum_A(h["chg_pct"])
-        r = market_risk(flow, flag("high_vol"), flag("defensive"), flag("import_heavy"), fx, True)
+        r = fx_market_risk(fx) if market == "us" else market_risk(flow, flag("high_vol"), flag("defensive"), flag("import_heavy"), fx, True)
         comp = {"fundamental": f, "disparity_score": dsc, "alignment": al, "volume": v,
                 "trend_health": trend, "momentum": m, "market_risk": r}
         total = (f + trend + m + r) if f is not None else None
@@ -335,13 +344,12 @@ def build_row(stock, market, fx, inp, candles=None):
         dd = drawdown_score(h["close"], h["hi52"])
         m = momentum_B(h["chg_pct"])
         f = fundamental(yoy)
-        r = market_risk(flow, flag("high_vol"), flag("defensive"), False, fx, False)
+        r = fx_market_risk(fx) if market == "us" else market_risk(flow, flag("high_vol"), flag("defensive"), False, fx, False)
         comp = {"fundamental": f, "pos_52w": p, "drawdown": dd, "momentum": m, "market_risk": r,
                 "disparity_score": dsc}
         total = (p + dd + m + f + r) if f is not None else None
 
-    fxp = fx_penalty(fx) if market == "us" else 0
-    if total is not None: total += fxp
+    # v2.6: 외부 환율 페널티 폐지 — 미국 환율은 위 market_risk(fx_market_risk)에 이미 포함됨.
 
     # 한국 종목: KR_NAMES 적용 후에도 한글이 없으면 Yahoo shortName으로 대체
     name = stock["name"]
@@ -355,7 +363,7 @@ def build_row(stock, market, fx, inp, candles=None):
         "close": round(h["close"], 2), "chg_pct": round(h["chg_pct"], 2),
         "ma20": round(h["ma20"], 1), "ma60": round(h["ma60"], 1) if h["ma60"] else None,
         "hi52": round(h["hi52"], 2), "lo52": round(h["lo52"], 2),
-        "disparity": round(disp, 1), "fx_penalty": fxp,
+        "disparity": round(disp, 1), "fx_penalty": 0,
         **comp, "total": round(total) if total is not None else None,
         "gate": final_gate(typ, total, dsc),
     }
