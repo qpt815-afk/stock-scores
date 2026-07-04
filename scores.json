@@ -1,16 +1,16 @@
 {
-  "as_of": "2026-07-04 06:57   🛑 한국장 휴장(주말) · 미국장 휴장(독립기념일)",
+  "as_of": "2026-07-04 19:17   🛑 한국장 휴장(주말) · 미국장 휴장(주말)",
   "fx_usdkrw": 1530.15,
   "fx_penalty": -12,
   "dart_filled_kr": 41,
   "yahoo_filled_kr": 8,
   "foreign_flow_kr": 50,
   "us_filled": 42,
-  "holiday_notice": "🛑 오늘은 한국 증시 휴장일(주말)이라 한국 종목 시세가 갱신되지 않습니다   🛑 오늘은 미국 증시 휴장일(독립기념일)이라 미국 종목 시세가 갱신되지 않습니다",
+  "holiday_notice": "🛑 오늘은 한국 증시 휴장일(주말)이라 한국 종목 시세가 갱신되지 않습니다   🛑 오늘은 미국 증시 휴장일(주말)이라 미국 종목 시세가 갱신되지 않습니다",
   "kr_closed": true,
   "kr_holiday": "주말",
   "us_closed": true,
-  "us_holiday": "독립기념일",
+  "us_holiday": "주말",
   "score_version": "v3.0",
   "market_trend": {
     "kr": {
@@ -18,8 +18,8 @@
       "weak": true,
       "above": false,
       "rising": false,
-      "close": 7648.09,
-      "ma20": 8378.3
+      "close": 8088.34,
+      "ma20": 8374.7
     },
     "us": {
       "score": 10,
@@ -35,13 +35,13 @@
       "indices": [
         {
           "name": "코스피",
-          "val": 7648.09,
-          "chg": -7.89
+          "val": 8088.34,
+          "chg": 5.76
         },
         {
           "name": "코스닥",
-          "val": 866.72,
-          "chg": -6.74
+          "val": 868.41,
+          "chg": 0.19
         }
       ],
       "up": 36,
