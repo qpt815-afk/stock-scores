@@ -410,11 +410,28 @@ def stop_loss_gate(slp):
     if slp <= 10: return "warn", f"손절폭 {slp}% (경고)"
     return "over", f"손절폭 {slp}% (10% 초과 — 과대)"
 
+def _index_closes(res):
+    """지수 종가 시리즈. 장 마감 직후 마지막 일봉 close가 아직 null(미확정)이면
+    meta.regularMarketPrice(당일 확정 종가)를 최신 종가로 덧붙여 최신 거래일을 반영한다.
+    (개별종목 fetch_history·환율 fetch_fx는 이미 meta 현재가를 쓰지만, 지수는 일봉 close만
+     써서 장 마감 직후 지수값이 전일에 멈추던 버그를 보정.) returns (closes, 폴백적용여부)."""
+    raw = res["indicators"]["quote"][0]["close"]
+    closes = [c for c in raw if c is not None]
+    meta = res.get("meta", {})
+    rmp, rmt = meta.get("regularMarketPrice"), meta.get("regularMarketTime")
+    ts = res.get("timestamp") or []
+    if closes and raw and raw[-1] is None and rmp and rmt and ts:
+        tz = datetime.timezone(datetime.timedelta(hours=9))
+        last_valid = max(i for i, c in enumerate(raw) if c is not None)
+        if datetime.datetime.fromtimestamp(rmt, tz).date() > datetime.datetime.fromtimestamp(ts[last_valid], tz).date():
+            return closes + [rmp], True   # 미확정 봉의 실제 종가로 최신값 보정
+    return closes, False
+
 def index_trend(sym):
     # v2.9: 시장지수 추세. 20일선 위/아래 + 20일선 기울기로 점수(0~15)·약세 게이트 산출.
     try:
         res = requests.get(YF.format(sym=sym), headers=UA, timeout=20).json()["chart"]["result"][0]
-        cl = [c for c in res["indicators"]["quote"][0]["close"] if c is not None]
+        cl, _ = _index_closes(res)   # 장 마감 직후 미확정 일봉이면 meta 현재가로 폴백
         if len(cl) < 25: return None
         ma20 = sum(cl[-20:]) / 20
         ma20_prev = sum(cl[-25:-5]) / 20
@@ -757,7 +774,7 @@ def fetch_index(sym, candle_days=120):
         j = requests.get(YF.format(sym=sym), headers=UA, timeout=20).json()
         res = j["chart"]["result"][0]
         q = res["indicators"]["quote"][0]
-        cl = [c for c in q["close"] if c is not None]
+        cl, pended = _index_closes(res)   # 장 마감 직후 미확정 일봉이면 meta 현재가로 폴백
         if len(cl) < 2: return None
         o, hi, lo, c2 = q.get("open", []), q.get("high", []), q.get("low", []), q["close"]
         ohlc = []
@@ -768,6 +785,10 @@ def fetch_index(sym, candle_days=120):
             cc = c2[i]
             if None in (oo, hh, ll, cc): continue
             ohlc.append([round(oo, 2), round(hh, 2), round(ll, 2), round(cc, 2)])
+        # 폴백으로 당일 종가를 덧붙인 경우, 일봉 OHLC(고·저)가 비어 있으므로 전일종가~현재가로 캔들 합성
+        if pended and ohlc:
+            prevc, last = cl[-2], cl[-1]
+            ohlc.append([round(prevc, 2), round(max(prevc, last), 2), round(min(prevc, last), 2), round(last, 2)])
         return {"val": round(cl[-1], 2), "chg": round((cl[-1]-cl[-2])/cl[-2]*100, 2), "ohlc": ohlc[-candle_days:]}
     except Exception:
         return None
