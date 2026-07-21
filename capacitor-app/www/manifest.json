@@ -1,0 +1,26 @@
+{
+  "name": "매수 스카우터",
+  "short_name": "매수 스카우터",
+  "description": "한국·미국 시총 상위 종목의 v2.2 매수타이밍 점수를 매일 브리핑",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0b0d",
+  "theme_color": "#0a0b0d",
+  "lang": "ko",
+  "id": "/",
+  "prefer_related_applications": false,
+  "related_applications": [
+    {
+      "platform": "play",
+      "id": "com.havacompany.maesuscouter",
+      "url": "https://play.google.com/store/apps/details?id=com.havacompany.maesuscouter"
+    }
+  ],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

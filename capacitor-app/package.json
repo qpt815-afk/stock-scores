@@ -1,0 +1,26 @@
+{
+  "name": "maesuscouter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "매수 스카우터 - 주식 종목 점수화 앱 (Capacitor + AdMob 광고 + RevenueCat 구독)",
+  "scripts": {
+    "build:rc": "esbuild src/rc-facade.js --bundle --format=iife --outfile=www/rc.bundle.js",
+    "build:ads": "esbuild src/ads-facade.js --bundle --format=iife --outfile=www/ads.bundle.js",
+    "bundles": "npm run build:rc && npm run build:ads",
+    "patch": "node scripts/patch-android.js",
+    "sync": "npm run bundles && npx cap sync",
+    "android": "npm run sync && npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor-community/admob": "^7.2.0",
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.6.7",
+    "@capacitor/ios": "^7.6.8",
+    "@revenuecat/purchases-capacitor": "^10.4.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^7.0.0",
+    "esbuild": "^0.24.2"
+  }
+}

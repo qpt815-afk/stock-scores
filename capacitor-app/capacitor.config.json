@@ -1,0 +1,8 @@
+{
+  "appId": "com.havacompany.maesuscouter",
+  "appName": "매수 스카우터",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  }
+}

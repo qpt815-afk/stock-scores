@@ -1,0 +1,13 @@
+node_modules/
+android/
+www/rc.bundle.js
+.DS_Store
+*.log
+
+# 출시 산출물·서명키는 절대 커밋 금지 (키스토어/비밀번호 유출 방지)
+출시/
+*.jks
+*.keystore
+*.p8
+*.p12
+*.mobileprovision

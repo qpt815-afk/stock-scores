@@ -1,0 +1,108 @@
+# 매수 스카우터 iOS 빌드 → TestFlight 업로드
+# Windows PC에는 Xcode가 없으므로 GitHub의 macOS 러너가 빌드/서명/업로드를 대신합니다.
+# 필요한 GitHub Secrets (리포 Settings > Secrets and variables > Actions):
+#   APPSTORE_ISSUER_ID : App Store Connect API 키의 Issuer ID
+#   APPSTORE_KEY_ID    : App Store Connect API 키의 Key ID
+#   APPSTORE_P8        : AuthKey_XXXX.p8 파일 내용 전체 (-----BEGIN PRIVATE KEY----- 포함)
+#   APPLE_TEAM_ID      : Apple Developer 팀 ID (Membership 페이지, 예: A1B2C3D4E5)
+# 자세한 절차: capacitor-app/아이폰_출시_가이드.md
+
+name: iOS TestFlight
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ios-testflight
+  cancel-in-progress: false
+
+jobs:
+  build-upload:
+    runs-on: macos-15
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: capacitor-app
+    steps:
+      - name: 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Node 설치
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: capacitor-app/package-lock.json
+
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: JS 번들 빌드 (RevenueCat + AdMob)
+        run: npm run bundles
+
+      - name: 웹 앱을 iOS 프로젝트로 동기화 (pod install 포함)
+        run: npx cap sync ios
+
+      - name: App Store Connect API 키 파일 생성
+        env:
+          APPSTORE_P8: ${{ secrets.APPSTORE_P8 }}
+        run: |
+          printf '%s' "$APPSTORE_P8" > "$RUNNER_TEMP/AuthKey.p8"
+
+      - name: 아카이브 (빌드 + 자동 서명)
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+        run: |
+          xcodebuild -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            archive \
+            CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/AuthKey.p8" \
+            -authenticationKeyID "$APPSTORE_KEY_ID" \
+            -authenticationKeyIssuerID "$APPSTORE_ISSUER_ID"
+
+      - name: ExportOptions.plist 생성
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict>
+          </plist>
+          EOF
+
+      - name: App Store Connect로 업로드 (TestFlight)
+        env:
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/AuthKey.p8" \
+            -authenticationKeyID "$APPSTORE_KEY_ID" \
+            -authenticationKeyIssuerID "$APPSTORE_ISSUER_ID"
+
+      - name: 완료 안내
+        run: |
+          echo "업로드 완료. App Store Connect > TestFlight 탭에서 처리(약 5~30분) 후 빌드가 나타납니다."
+          echo "마케팅 버전 3.1 / 빌드 번호 $GITHUB_RUN_NUMBER"
