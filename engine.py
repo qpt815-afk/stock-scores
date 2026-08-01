@@ -226,6 +226,7 @@ def fetch_history(sym, candle_days=120):
         "avg_vol20": (sum(vols[-20:])/20) if len(vols) >= 20 else None,
         "ohlc": ohlc[-candle_days:],
         "yahoo_name": (meta.get("shortName") or "").strip(),
+        "last_ts": (res.get("timestamp") or [None])[-1],   # 마지막 캔들 유닉스 시각(역행 방지 가드용)
     }
 
 def fetch_fx():
@@ -713,6 +714,7 @@ def build_row(stock, market, fx, inp, candles=None, mkt=None):
 
     row = {
         "rank": stock["rank"], "name": name, "ticker": stock["ticker"],
+        "last_ts": h.get("last_ts"),             # 마지막 캔들 유닉스 시각(역행 방지 가드 비교용)
         "type": ("A" if typ3 == "A" else "B"),   # 레거시 호환(A/B). 4분류는 type_v3_0
         "close": round(h["close"], 2), "chg_pct": round(h["chg_pct"], 2),
         "ma5": round(h["ma5"], 1) if h.get("ma5") else None,
@@ -807,6 +809,52 @@ def market_brief(rows, market, idx_candles=None):
     avg = round(sum(chgs)/len(chgs), 2) if chgs else 0.0
     return {"indices": idx, "up": up, "down": down, "avg": avg, "n": len(chgs)}
 
+# ── 데이터 역행 방지 가드 ────────────────────────────────────
+# 야후 chart API가 간헐적으로(특히 미국장 마감 직후 20:4x UTC = KST 새벽 첫 실행 시간대)
+# '가장 최근 거래일이 통째로 빠진' 하루 지난 데이터를 반환하는 일이 있음.
+# 실제 사례: 2026-08-01 05:57 KST 실행이 7/31(금) 코스피 사상최대 폭등장을 지우고
+#            목요일 데이터로 커밋 → 06:52 실행이 우연히 복구.
+# 그대로 커밋하면 앱 데이터가 하루 전으로 '역행'하므로, 시장(kr/us)별로 새 데이터의
+# 마지막 캔들 시각(last_ts)이 기존 scores.json보다 과거면 그 시장만 기존 데이터를 유지한다.
+# (기존 파일에 last_ts가 없는 구버전이면 비교 불가 → 가드 없이 통과, 다음 실행부터 보호)
+_GUARD = {
+    "kr": {"is_mine": lambda t: t.endswith((".KS", ".KQ")), "indices": ("코스피", "코스닥"), "label": "한국"},
+    "us": {"is_mine": lambda t: not t.endswith((".KS", ".KQ")), "indices": ("S&P 500", "나스닥"), "label": "미국"},
+}
+
+def _last_ts(rows):
+    ts = [r.get("last_ts") for r in (rows or []) if isinstance(r, dict) and r.get("last_ts")]
+    return max(ts) if ts else None
+
+def apply_regression_guard(data, candles_data, scores_path="scores.json", candles_path="candles.json"):
+    try:
+        old = json.load(open(scores_path, encoding="utf-8"))
+    except Exception:
+        return data, candles_data              # 기존 파일 없음/손상 → 그대로 진행
+    try:
+        old_candles = json.load(open(candles_path, encoding="utf-8"))
+    except Exception:
+        old_candles = {}
+    fmt = lambda t: datetime.datetime.fromtimestamp(t, datetime.timezone.utc).strftime("%Y-%m-%d")
+    for mk, g in _GUARD.items():
+        new_ts, old_ts = _last_ts(data.get(mk)), _last_ts(old.get(mk))
+        if not new_ts or not old_ts or new_ts >= old_ts:
+            continue                           # 비교 불가(구버전 파일 등)거나 정상 → 통과
+        print(f"⚠️ 역행 감지({g['label']}): 새 데이터 마지막 거래일 {fmt(new_ts)} < 기존 {fmt(old_ts)}"
+              f" — 야후 지연 응답으로 판단, 기존 {g['label']} 데이터 유지")
+        data[mk] = old[mk]                     # 행 전체 유지(옛 시세로 계산된 점수 커밋 방지)
+        for sect in ("market", "market_trend"):
+            if isinstance(old.get(sect), dict) and old[sect].get(mk):
+                data.setdefault(sect, {})[mk] = old[sect][mk]
+        data.setdefault("stale_guard", {})[mk] = f"{fmt(old_ts)} 데이터 유지(야후가 {fmt(new_ts)}까지만 반환)"
+        for t, arr in (old_candles.get("stocks") or {}).items():
+            if g["is_mine"](t):
+                candles_data["stocks"][t] = arr
+        for nm in g["indices"]:
+            if (old_candles.get("indices") or {}).get(nm):
+                candles_data["indices"][nm] = old_candles["indices"][nm]
+    return data, candles_data
+
 def main():
     top = int(os.environ.get("SCORE_TOP", "50"))
     fx = fetch_fx(); inp = load_inputs()
@@ -896,11 +944,15 @@ def main():
         "kr": kr_rows,
         "us": us_rows,
     }
+    # 캔들차트용 데이터 — 지연 로드용 별도 파일(용량 절약 위해 압축 저장)
+    candles_data = {"as_of": stamp, "stocks": candles, "indices": idx_candles}
+
+    # 야후 지연 응답(최근 거래일 누락)이 하루 전 데이터로 역행 커밋되는 것을 차단
+    data, candles_data = apply_regression_guard(data, candles_data)
+
     json.dump(data, open("scores.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
     print(f"\n저장: scores.json (KR {len(data['kr'])} · US {len(data['us'])} · 환율 {fx} · 페널티 {data['fx_penalty']})")
 
-    # 캔들차트용 데이터 — 지연 로드용 별도 파일(용량 절약 위해 압축 저장)
-    candles_data = {"as_of": stamp, "stocks": candles, "indices": idx_candles}
     json.dump(candles_data, open("candles.json", "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     print(f"저장: candles.json (종목 {len(candles)} · 지수 {len(idx_candles)})")
 
