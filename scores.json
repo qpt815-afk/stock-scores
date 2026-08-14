@@ -1,6 +1,6 @@
 {
-  "as_of": "2026-08-14 19:23",
-  "fx_usdkrw": 1411.56,
+  "as_of": "2026-08-14 20:17",
+  "fx_usdkrw": 1412.5,
   "fx_penalty": 0,
   "dart_filled_kr": 41,
   "yahoo_filled_kr": 8,
@@ -19,7 +19,7 @@
       "above": true,
       "rising": false,
       "close": 6977.94,
-      "ma20": 6463.3
+      "ma20": 6504.4
     },
     "us": {
       "score": 15,
