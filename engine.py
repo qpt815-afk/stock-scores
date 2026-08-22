@@ -197,7 +197,10 @@ def fetch_ranking(market, top=30):
 def fetch_history(sym, candle_days=120):
     res = requests.get(YF.format(sym=sym), headers=UA, timeout=20).json()["chart"]["result"][0]
     q = res["indicators"]["quote"][0]
-    closes = [c for c in q["close"] if c is not None]
+    # close와 timestamp는 반드시 쌍으로 거른다. null 봉만 버리고 시각은 원본 마지막을 쓰면
+    # "가격은 전일·시각은 당일"로 어긋나 역행 가드가 무력해진다(한국장 아침 실행에서 실제 발생).
+    pairs = [(t, c) for t, c in zip(res.get("timestamp") or [], q["close"]) if c is not None]
+    closes = [c for _, c in pairs]
     vols = [v for v in q.get("volume", []) if v is not None]
     if len(closes) < 21: return None
     meta = res.get("meta", {})
@@ -226,7 +229,7 @@ def fetch_history(sym, candle_days=120):
         "avg_vol20": (sum(vols[-20:])/20) if len(vols) >= 20 else None,
         "ohlc": ohlc[-candle_days:],
         "yahoo_name": (meta.get("shortName") or "").strip(),
-        "last_ts": (res.get("timestamp") or [None])[-1],   # 마지막 캔들 유닉스 시각(역행 방지 가드용)
+        "last_ts": pairs[-1][0],   # 마지막 '확정' 캔들 시각(역행 방지 가드용)
     }
 
 def fetch_fx():
