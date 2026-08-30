@@ -1,8 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-v3.0 매수타이밍 점수 엔진 (A 추세추종 / B 바닥회복 / C 박스권·돌파대기 / EXCLUDE 검토제외)
+v3.1 매수타이밍 점수 엔진 (A 추세추종 / B 바닥회복 / C 박스권·돌파대기 / EXCLUDE 검토제외)
 ─────────────────────────────────────────────────────────────
+
+[v3.1 — A·B 게이트 기준을 시장별(한국/미국)로 분리 — 2026-08-30 성과 감사 반영]
+  · 근거: v3.0 신호 2026-07-01~08-21 구간 백테스트(신호일 종가 진입·20거래일 보유, 진입일 중복 제거).
+    - 미국 A유형(기준충족의 98%)은 나스닥 대비 -2.0%p·같은날 유니버스 대비 -1.6%p(t=-4.9)로 유의 열위.
+      기준점수 60→70으로 좁히면 평균 +0.69→+1.53%·승률 55.9→59.6%로 개선(그래도 지수 초과는 아님).
+    - 미국 B유형은 지수 대비 +6.7%p로 최상위였으나 '손절폭>10% → 손절폭과대' 컷과 총점 70 조건이
+      추천 경로를 막음(하루 평균 1.1종목). 특히 손절폭 10~15% & 회복>=2 구간이 +11.6%로 가장 좋았음.
+    - 한국은 현행 규칙 유효(기준충족 코스피 대비 +8.0%p) → 무변경. A 70 상향은 표본 2건뿐이라 보류.
+  · 변경(GATE_PARAMS): 미국 A 기준점수 60→70. 미국 B 손절폭 컷 10→15%·기준점수 70→65
+    (넓은 손절폭이 손절거리 점수 최대 10점을 깎는 것을 상쇄). 한국은 60/70/10% 그대로.
+  · stop_loss_gate '과대(over)' 기준도 시장별: 한국 10%·미국 15%.
+  · 검토제외(EXCLUDE)·C유형 게이트는 무변경 — 배제 필터는 두 시장 모두 유효 확인(t=-7.45/-3.71).
+  · 점수 배점·필드 구조 무변경. score_version만 v3.1로 (프론트 호환 유지).
 
 [v3.0 — NONE을 C(관찰후보)와 EXCLUDE(검토제외)로 분리]
   · 분류 4분기: A·B는 v2.9와 동일, 기존 NONE 중 '박스권 수렴·돌파대기' 조건을 만족하면 C로 승격,
@@ -407,12 +420,13 @@ def stop_loss_score_B(slp):
     if slp <= 10: return 4
     return 0
 
-def stop_loss_gate(slp):
+def stop_loss_gate(slp, market="kr"):
     if slp is None: return "unknown", "최근 20일 저점 데이터 부족"
+    cap = 15 if market == "us" else 10   # v3.1: '과대' 기준 시장별(한국 10%·미국 15%)
     if slp <= 5:  return "good", f"손절폭 {slp}% (양호)"
     if slp <= 8:  return "ok",   f"손절폭 {slp}% (허용)"
-    if slp <= 10: return "warn", f"손절폭 {slp}% (경고)"
-    return "over", f"손절폭 {slp}% (10% 초과 — 과대)"
+    if slp <= cap: return "warn", f"손절폭 {slp}% (경고)"
+    return "over", f"손절폭 {slp}% ({cap}% 초과 — 과대)"
 
 def _index_closes(res):
     """지수 종가 시리즈. 장 마감 직후 마지막 일봉 close가 아직 null(미확정)이면
@@ -594,23 +608,34 @@ def exclude_reason(h, m, slp, mkt_weak):
     if mkt_weak: return "MARKET_WEAK_AND_NO_SETUP", EXCLUDE_TEXT["MARKET_WEAK_AND_NO_SETUP"]
     return "NO_STRATEGY_MATCH", EXCLUDE_TEXT["NO_STRATEGY_MATCH"]
 
-def final_gate_v3(typ3, total, h, m, rec, slp, mkt_weak, up, disp):
-    """v3.0 게이트 — (code, 표시명, 사유). EXCLUDE는 build_row에서 별도 처리."""
+# v3.1: A·B 게이트 기준 시장별 분리 (상단 changelog의 2026-07~08 백테스트 근거 참조)
+#   us A 60→70: 미국 A가 지수·유니버스 대비 유의 열위 → 상위 구간만 통과.
+#   us B slp 10→15%·총점 70→65: 미국 B(최상위 성과)가 손절폭 컷에 막혀 추천 경로에서 배제되던 것 완화.
+#     총점 65는 넓은 손절폭이 손절거리 점수(최대 10점)를 깎는 것을 상쇄하는 수준.
+GATE_PARAMS = {
+    "kr": {"a_ok_cut": 60, "b_ok_cut": 70, "b_slp_max": 10},
+    "us": {"a_ok_cut": 70, "b_ok_cut": 65, "b_slp_max": 15},
+}
+
+def final_gate_v3(typ3, total, h, m, rec, slp, mkt_weak, up, disp, market="kr"):
+    """v3.1 게이트 — (code, 표시명, 사유). EXCLUDE는 build_row에서 별도 처리. A·B 기준은 시장별."""
+    p = GATE_PARAMS.get(market, GATE_PARAMS["kr"])
     if total is None:
         return "pending", GATE_LABEL_V3["pending"], "영업이익 YoY 데이터 없음"
     if typ3 == "B":
         if rec == 0: return "below", GATE_LABEL_V3["below"], "회복 신호 0개 — 아직 하락 중"
         if rec == 1: return "watch", GATE_LABEL_V3["watch"], "회복 신호 1개 — 회복초기, 기준충족 보류"
-        if slp is not None and slp > 10: return "risk", "손절폭과대", f"회복은 확인됐으나 손절폭 {slp}%가 10% 초과"
-        if total >= 70 and rec >= 2 and (slp is not None and slp <= 10):
+        if slp is not None and slp > p["b_slp_max"]:
+            return "risk", "손절폭과대", f"회복은 확인됐으나 손절폭 {slp}%가 {p['b_slp_max']}% 초과"
+        if total >= p["b_ok_cut"] and rec >= 2 and (slp is not None and slp <= p["b_slp_max"]):
             return "ok", GATE_LABEL_V3["ok"], f"B유형 회복확인({rec}개)·점수({total})·손절폭 조건 충족"
         if slp is None: return "below", GATE_LABEL_V3["below"], "손절폭 데이터 부족 — 기준충족 보류"
-        return "below", GATE_LABEL_V3["below"], f"B유형 기준점수(70) 미달 (현재 {total})"
+        return "below", GATE_LABEL_V3["below"], f"B유형 기준점수({p['b_ok_cut']}) 미달 (현재 {total})"
     if typ3 == "A":
         if disp is not None and disp > 18: return "hot", GATE_LABEL_V3["hot"], "20일선 대비 +18% 초과 — 고점 추격 위험"
         if mkt_weak: return "watch", "시장약세", "시장지수 약세 — 기준충족 보류"
-        if total >= 60: return "ok", GATE_LABEL_V3["ok"], f"A유형 추세·점수({total}) 기준 충족"
-        return "below", GATE_LABEL_V3["below"], f"A유형 기준점수(60) 미달 (현재 {total})"
+        if total >= p["a_ok_cut"]: return "ok", GATE_LABEL_V3["ok"], f"A유형 추세·점수({total}) 기준 충족"
+        return "below", GATE_LABEL_V3["below"], f"A유형 기준점수({p['a_ok_cut']}) 미달 (현재 {total})"
     if typ3 == "C":
         close = h["close"]; ma20 = h["ma20"]; ret5 = h.get("ret5"); vr = m.get("vol_ratio")
         rl = m.get("recent_low_20d"); r20 = m.get("range20_pct")
@@ -703,10 +728,10 @@ def build_row(stock, market, fx, inp, candles=None, mkt=None):
         code, label, reason = "exclude", GATE_LABEL_V3["exclude"], exc_text
         total = 0                                       # EXCLUDE 최종 0점 덮어쓰기
     else:
-        code, label, reason = final_gate_v3(typ3, total, h, m, rec_n, slp, mkt_weak, up, disp)
+        code, label, reason = final_gate_v3(typ3, total, h, m, rec_n, slp, mkt_weak, up, disp, market)
     if typ3 == "C": c_reason = reason
 
-    slg, slr = stop_loss_gate(slp)
+    slg, slr = stop_loss_gate(slp, market)
     mtg = "weak" if mkt_weak else ("strong" if (mkt and mkt.get("score", 0) >= 12) else "neutral")
     type_v29 = {"A":"A","B":"B","C":"NONE","EXCLUDE":"NONE"}[typ3]
 
@@ -739,10 +764,10 @@ def build_row(stock, market, fx, inp, candles=None, mkt=None):
         "stop_loss_gate": slg,
         "stop_loss_reason": slr,
         "market_trend_gate": mtg,
-        # ── v3.0 신규 필드 ──
+        # ── v3.0 신규 필드 (v3.1도 동일 키 유지 — 프론트 호환) ──
         "type_v3_0": typ3,
         "gate_v3_0": code,
-        "score_version": "v3.0",
+        "score_version": "v3.1",
         **cf,
         "recent_high_20d": m["recent_high_20d"], "previous_high_20d": m["previous_high_20d"],
         "range20_pct": m["range20_pct"], "range60_pct": m["range60_pct"],
@@ -941,7 +966,7 @@ def main():
         "holiday_notice": holiday_notice,
         "kr_closed": kr_closed, "kr_holiday": kr_hol,
         "us_closed": us_closed, "us_holiday": us_hol,
-        "score_version": "v3.0",
+        "score_version": "v3.1",
         "market_trend": {"kr": kr_mkt, "us": us_mkt},
         "market": market,
         "kr": kr_rows,
@@ -961,4 +986,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-# (engine v2.9)
+# (engine v3.1)
