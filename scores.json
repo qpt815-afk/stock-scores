@@ -1,6 +1,6 @@
 {
-  "as_of": "2026-09-07 19:22   🛑 미국장 휴장(노동절)",
-  "fx_usdkrw": 1345.34,
+  "as_of": "2026-09-08 01:00   🛑 미국장 휴장(노동절)",
+  "fx_usdkrw": 1346.03,
   "fx_penalty": 0,
   "dart_filled_kr": 41,
   "yahoo_filled_kr": 8,
@@ -6935,5 +6935,8 @@
       "exclude_reason_code": null,
       "exclude_reason": null
     }
-  ]
+  ],
+  "stale_guard": {
+    "kr": "2026-09-07 데이터 유지(야후가 2026-09-04까지만 반환)"
+  }
 }
