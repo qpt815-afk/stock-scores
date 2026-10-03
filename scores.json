@@ -1,6 +1,6 @@
 {
-  "as_of": "2026-10-03 05:57   🛑 한국장 휴장(개천절)",
-  "fx_usdkrw": 1343.08,
+  "as_of": "2026-10-03 09:10   🛑 한국장 휴장(개천절)",
+  "fx_usdkrw": 1342.51,
   "fx_penalty": 0,
   "dart_filled_kr": 41,
   "yahoo_filled_kr": 8,
@@ -6870,5 +6870,8 @@
       "exclude_reason_code": null,
       "exclude_reason": null
     }
-  ]
+  ],
+  "stale_guard": {
+    "us": "2026-10-02 데이터 유지(야후가 2026-10-01까지만 반환)"
+  }
 }
