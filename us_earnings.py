@@ -9,12 +9,16 @@ DART(한국)와 같은 역할의 '미국판'. inputs.csv에 op_profit_yoy 값이
 · 우선순위: 영업이익(Operating Income) → 세전이익(Pretax) → 순이익(Net)
    - 은행·보험은 '영업이익' 항목 자체가 없어 세전이익으로 자동 폴백.
 · YoY는 '전년 동(同)분기' 기준으로 날짜를 맞춰 계산 → 누락 분기 방어.
-· 네트워크/파싱 실패는 조용히 건너뜀 → 해당 종목만 '데이터대기' 유지,
+· 네트워크/파싱 실패는 조용히 건너뜀 → 이후 직전값 이월·CSV 폴백 순으로 채워짐,
    파이프라인 전체는 절대 깨지지 않음.
-· inputs.csv에 값이 이미 있으면 건드리지 않음(수동 입력이 항상 우선).
+· 우선순위(출처 태그 fund_source 기준): 자동 수집(dart·yahoo)이 이미 채운 종목과
+   inputs.csv에서 lock=1로 고정한 종목만 건너뛴다. CSV 수동값(csv)은 덮어쓴다.
+   (예전엔 'CSV에 값이 있으면 무조건 건너뜀'이라 미국 대형주 8종목이 6월 값에 3개월 넘게 고정됐음)
+· 적자 구간 YoY는 fund_rules.yoy_from_pair(한·미 공통 규칙).
 """
 import requests, time
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
+from fund_rules import yoy_from_pair
 
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
 TS = "https://query1.finance.yahoo.com/ws/fundamentals-timeseries/v1/finance/timeseries/{sym}"
@@ -27,10 +31,10 @@ def _d(s):
 
 
 def _yoy(arr):
-    """arr: [(asOfDate, value)] → YoY(%) (전년 동분기 대비) 또는 None."""
+    """arr: [(asOfDate, value)] → (YoY%, 최근 분기 asOfDate) (전년 동분기 대비) 또는 (None, None)."""
     arr = sorted(arr)
     if len(arr) < 2:
-        return None
+        return None, None
     last_d, last_v = arr[-1]
     target = date(_d(last_d).year - 1, _d(last_d).month, 15)
     best, gap = None, 9999
@@ -40,9 +44,9 @@ def _yoy(arr):
             gap, best = g, (d, v)
     if not best or gap > 60:                        # 전년 동분기를 못 찾으면
         best = arr[-5] if len(arr) >= 5 else None    # 위치상 4분기 전으로 폴백
-    if not best or best[1] == 0:
-        return None
-    return (last_v - best[1]) / abs(best[1]) * 100
+    if not best:
+        return None, None
+    return yoy_from_pair(last_v, best[1]), last_d
 
 
 def _fetch_yoy(ticker):
@@ -56,33 +60,40 @@ def _fetch_yoy(ticker):
         by[ty] = [(o["asOfDate"], o["reportedValue"]["raw"])
                   for o in r.get(ty, []) if o and o.get("reportedValue")]
     for ty in TYPES:                                 # 영업이익 → 세전 → 순이익 순
-        out = _yoy(by.get(ty, []))
+        out, last_d = _yoy(by.get(ty, []))
         if out is not None:
-            return out
-    return None
+            label = {"quarterlyOperatingIncome": "영업이익", "quarterlyPretaxIncome": "세전이익",
+                     "quarterlyNetIncome": "순이익"}[ty]
+            return out, f"{last_d} 분기 {label}"
+    return None, None
+
+
+AUTO_SOURCES = ("dart", "yahoo", "lock", "carry")   # 자동 수집·수동 고정·직전 DART 이월 → 건너뜀
 
 
 def enrich(us_stocks, inp):
-    """op_profit_yoy가 비어 있는 미국 종목을 자동으로 채운다. 채운 종목 수 반환."""
+    """자동 수집값이 없는 종목의 영업이익 YoY를 야후로 채운다(CSV 수동값은 덮어씀). 채운 종목 수 반환.
+    한국 종목에도 DART가 못 채운 종목의 폴백으로 쓰인다(engine.py)."""
+    today = datetime.now(timezone(timedelta(hours=9))).date().isoformat()
     filled = 0
     for s in us_stocks:
         t = (s.get("ticker") or "").strip()
         if not t:
             continue
         cur = inp.get(t, {})
-        if str(cur.get("op_profit_yoy", "")).strip() not in ("", "NA", "None"):
-            continue                                 # 수동 입력 우선 → 건너뜀
+        if cur.get("fund_source") in AUTO_SOURCES:
+            continue
         try:
-            y = _fetch_yoy(t)
+            y, period = _fetch_yoy(t)
         except Exception as e:
             print(f"  ! US earnings {t}: {e}")
-            y = None
+            y, period = None, None
         if y is None:
             continue
         y = max(-99, min(999, round(y)))             # 극단값 정리
         cur = dict(cur)
-        cur["ticker"] = t
-        cur["op_profit_yoy"] = y
+        cur.update({"ticker": t, "op_profit_yoy": y, "fund_source": "yahoo",
+                    "fund_as_of": today, "fund_period": period})
         cur.setdefault("foreign_flow", "neutral")
         inp[t] = cur
         filled += 1

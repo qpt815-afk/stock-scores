@@ -12,8 +12,9 @@ engine.py 가 한국 종목의 op_profit_yoy(영업이익 YoY)를 손입력 없�
 """
 import io, os, sys, time, zipfile
 import xml.etree.ElementTree as ET
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 import requests
+from fund_rules import yoy_from_pair
 
 BASE = "https://opendart.fss.or.kr/api"
 UA = {"User-Agent": "Mozilla/5.0"}
@@ -57,54 +58,69 @@ def _op_profit(items):
 
 
 def _yoy(cur, prev):
-    """영업이익 YoY(%). 적자/흑전 등 분모<=0 케이스는 휴리스틱 처리(스코어 구간 보정용)."""
-    if cur is None or prev is None:
-        return None
-    if prev > 0:
-        return round((cur - prev) / prev * 100, 1)
-    if cur > 0:          # 흑자 전환 → 최상위 펀더 구간으로
-        return 100.0
-    if cur <= prev:      # 적자 확대
-        return -50.0
-    return 0.0           # 적자 축소/유지
+    """영업이익 YoY(%). 적자 구간 처리는 fund_rules.yoy_from_pair(한·미 공통 규칙)."""
+    return yoy_from_pair(cur, prev)
 
 
-def latest_op_profit_yoy(key, corp_code):
-    """가장 최근 제출된 보고서(분기 누적 우선)의 영업이익 YoY 반환."""
+# 보고서 코드 → 표시용 기간명
+REPRT_NAME = {"11011": "사업보고서", "11014": "3분기보고서", "11012": "반기보고서", "11013": "1분기보고서"}
+
+
+def latest_op_profit(key, corp_code):
+    """가장 최근 제출된 보고서의 영업이익 YoY와 기간명. returns (yoy|None, '2026 반기보고서'|None).
+    연도마다 사업보고서(11011)를 먼저 본다. 예전 순서(3분기→반기→1분기→사업)는 3~5월에
+    전년 사업보고서가 나와도 전년 3분기 값을 먼저 집어 4분기 실적이 영구히 반영되지 않았다.
+    당해 연도의 사업보고서는 이듬해에야 나오므로 당해에는 자연히 분기 보고서로 내려간다."""
     cy = date.today().year
     for year in (cy, cy - 1):
-        for rc in ("11014", "11012", "11013", "11011"):   # 3분기→반기→1분기→사업보고서
+        for rc in ("11011", "11014", "11012", "11013"):   # 사업보고서→3분기→반기→1분기
             try:
                 j = requests.get(f"{BASE}/fnlttSinglAcnt.json", headers=UA, timeout=30,
                                  params={"crtfc_key": key, "corp_code": corp_code,
                                          "bsns_year": str(year), "reprt_code": rc}).json()
             except Exception:
+                return None, None      # 네트워크 오류 → 더 오래된 보고서로 내려가지 않고 이월에 맡김
+            st = j.get("status")
+            if st in ("013", "014"):   # 해당 보고서 없음 → 다음(더 이른) 보고서
                 continue
-            if j.get("status") != "000":
-                continue
+            if st != "000":            # 한도 초과(020)·점검(800)·키 오류 등 → 오래된 값을 dart로 확정하지 않음
+                return None, None
             cur, prev = _op_profit(j.get("list", []))
             v = _yoy(cur, prev)
             if v is not None:
-                return v
-    return None
+                return v, f"{year} {REPRT_NAME[rc]}"
+    return None, None
+
+
+def latest_op_profit_yoy(key, corp_code):
+    """(하위 호환) 가장 최근 보고서의 영업이익 YoY만 반환."""
+    return latest_op_profit(key, corp_code)[0]
 
 
 def enrich(kr_stocks, key, inp):
-    """kr_stocks(각 항목 ticker 예: '005930.KS') 의 영업이익 YoY를 inp[ticker]['op_profit_yoy']에 채움.
-    반환: 실제로 채운 종목 수. (개별 실패는 건너뛰고 CSV 값 유지)"""
+    """kr_stocks(각 항목 ticker 예: '005930.KS') 의 영업이익 YoY를 inp[ticker]에 채움.
+    출처 태그: fund_source='dart', fund_as_of=수집일(KST), fund_period=보고서 기간.
+    inputs.csv에서 lock=1인 종목은 건드리지 않음. 반환: 실제로 채운 종목 수.
+    (개별 실패는 건너뜀 → 이후 Yahoo 폴백·직전값 이월·CSV 순으로 채워짐)"""
     cmap = load_corp_map(key)
+    today = datetime.now(timezone(timedelta(hours=9))).date().isoformat()
     filled = 0
     for s in kr_stocks:
+        cur = inp.get(s["ticker"], {})
+        if cur.get("fund_source") == "lock":
+            continue
         code6 = s["ticker"].split(".")[0]
         corp = cmap.get(code6)
         if not corp:
             continue
         try:
-            v = latest_op_profit_yoy(key, corp)
+            v, period = latest_op_profit(key, corp)
         except Exception:
-            v = None
+            v, period = None, None
         if v is not None:
-            inp.setdefault(s["ticker"], {})["op_profit_yoy"] = v
+            row = inp.setdefault(s["ticker"], {})
+            row.update({"op_profit_yoy": v, "fund_source": "dart",
+                        "fund_as_of": today, "fund_period": period})
             filled += 1
         time.sleep(0.2)   # DART 호출 예의상 딜레이
     return filled
@@ -118,4 +134,5 @@ if __name__ == "__main__":
     cmap = load_corp_map(key)
     corp = cmap.get(code)
     print(f"종목 {code} → corp_code {corp}")
-    print(f"영업이익 YoY: {latest_op_profit_yoy(key, corp)}%")
+    v, period = latest_op_profit(key, corp)
+    print(f"영업이익 YoY: {v}% ({period})")

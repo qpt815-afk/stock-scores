@@ -117,6 +117,7 @@
   .typetag{ font-size:10px; font-weight:700; padding:1px 6px; border-radius:5px; flex-shrink:0; }
   .typetag.ta{ color:#7aa2ff; background:rgba(122,162,255,.15); }
   .typetag.tb{ color:#bd8cff; background:rgba(189,140,255,.15); }
+  .typetag.tc{ color:#9aa3ae; background:rgba(154,163,174,.15); }
   .drv{ font-size:12px; color:var(--muted); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .right{ display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0; }
   .pill{ font-size:11.5px; font-weight:700; padding:4px 9px; border-radius:7px; white-space:nowrap; }
@@ -630,7 +631,10 @@ const STATUS = {
   risk: { label: "위험주의", icon: "⚠", color: "#e2694e", bg: "rgba(226,105,78,.12)" },
   exclude: { label: "검토제외", icon: "✕", color: "#5a606b", bg: "rgba(120,126,135,.05)" }
 };
-const isBuyable = g => g === "ok" || g === "hot";
+const isBuyable = g => g === "ok";   // 과열주의(hot)는 기준충족이 아님 — 자체 배지로만 표시
+const gv = x => x.gate_v3_0 || x.gate;
+// 종합 정렬: 게이트 우선(기준충족 → 관찰 → 과열주의 → 대기 → 위험 → 데이터대기 → 검토제외), 같은 게이트 안에서 점수순
+const GATE_ORDER = { ok: 0, breakout_watch: 1, setup: 1, watch: 1, hot: 2, below: 3, risk: 4, pending: 5, exclude: 6, none: 6 };
 const chgColor = c => c >= 0 ? "#ec4d4d" : "#4d82e6";
 const fmt = n => typeof n === "number" ? n.toLocaleString() : n;
 const typeLabel = t => t === "A" ? "추세추종형" : "바닥회복형";
@@ -718,12 +722,15 @@ function App() {
   const mb = data && data.market ? data.market[market] : null;
   const byRank = raw.slice().sort((a, b) => a.rank - b.rank);
   const counts = raw.reduce((a, x) => (a[x.gate] = (a[x.gate] || 0) + 1, a), {});
-  const buyN = (counts.ok || 0) + (counts.hot || 0);
+  const buyN = counts.ok || 0;
   const buyList = raw.filter(x => isBuyable(x.gate)).sort((a, b) => (b.total ?? 0) - (a.total ?? 0));
   let scored = raw.slice();
   if (filter === "buy") scored = scored.filter(x => isBuyable(x.gate));
   if (filter === "hold") scored = scored.filter(x => !isBuyable(x.gate));
-  scored.sort((a, b) => (b[sortKey] ?? -1) - (a[sortKey] ?? -1));
+  scored.sort((a, b) => sortKey === "total"
+    ? ((GATE_ORDER[gv(a)] ?? 9) - (GATE_ORDER[gv(b)] ?? 9)) || ((b.total ?? -1) - (a.total ?? -1))
+    : (b[sortKey] ?? -1) - (a[sortKey] ?? -1));
+  const usFxPenalty = data ? (data.us || []).some(x => (x.fx_penalty || 0) < 0) : false;
   return /*#__PURE__*/React.createElement("div", {
     className: "app-page"
   }, /*#__PURE__*/React.createElement("div", {
@@ -834,7 +841,7 @@ function App() {
     className: "vtag"
   }, "v3.1")), /*#__PURE__*/React.createElement("div", {
     className: "brief-b"
-  }, market === "kr" ? /*#__PURE__*/React.createElement(React.Fragment, null, "환율 ", /*#__PURE__*/React.createElement("b", null, fmt(data.fx_usdkrw), "원"), " · 한국 상위 ", byRank.length, "종목 중 기준충족 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), " (A 60 / B 70점 이상). 참고용 정보예요.") : /*#__PURE__*/React.createElement(React.Fragment, null, "환율 ", /*#__PURE__*/React.createElement("b", null, fmt(data.fx_usdkrw), "원"), "이라 미국주 환율 페널티 적용 중. 기준충족 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), " (A 70 / B 65점 이상).")), buyList.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, market === "kr" ? /*#__PURE__*/React.createElement(React.Fragment, null, "환율 ", /*#__PURE__*/React.createElement("b", null, fmt(data.fx_usdkrw), "원"), " · 한국 상위 ", byRank.length, "종목 중 기준충족 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), " (A 60 / B 70 / C 75점 이상). 참고용 정보예요.") : /*#__PURE__*/React.createElement(React.Fragment, null, "환율 ", /*#__PURE__*/React.createElement("b", null, fmt(data.fx_usdkrw), "원"), usFxPenalty ? "이라 미국주 환율 페널티 적용 중. 기준충족 " : " · 미국 상위 " + byRank.length + "종목 중 기준충족 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), " (A 70 / B 65 / C 75점 이상).")), buyList.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "buychips"
   }, buyList.slice(0, 8).map(x => /*#__PURE__*/React.createElement("span", {
     className: "buychip",
@@ -886,7 +893,7 @@ function App() {
     style: {
       marginTop: 6
     }
-  }, /*#__PURE__*/React.createElement("b", null, "기준충족"), " = 유형 A: 한국 60점·미국 70점 이상. 유형 B: 회복신호 2개 이상에 한국 70점·손절폭 10% 이내, 미국 65점·손절폭 15% 이내(v3.1 — 시장별 백테스트 근거로 분리). A·B·C 어디에도 해당하지 않으면 검토제외. 회복신호 0개는 대기, 1개는 회복초기. 유형 A 고점 과열은 과열주의. 미국 종목은 환율 페널티 차감(원화 약세=감점). 외부 차감이라 총점은 100을 넘지 않아요. (참고용 정보이며 투자 권유가 아닙니다.)"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("b", null, "기준충족"), " = 유형 A: 한국 60점·미국 70점 이상. 유형 B: 회복신호 2개 이상에 한국 70점·손절폭 10% 이내, 미국 65점·손절폭 15% 이내(v3.1 — 시장별 기준). 유형 C: 75점 이상이면서 거래량을 동반해 박스 상단을 돌파한 경우. A·B·C 어디에도 해당하지 않으면 검토제외. 회복신호 0개는 대기, 1개는 회복초기. 유형 A 고점 과열은 과열주의. 미국 종목은 환율이 1,490원 이상일 때 페널티 차감(원화 약세=감점). 외부 차감이라 총점은 100을 넘지 않아요. (참고용 정보이며 투자 권유가 아닙니다.)"), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 6
     }
@@ -913,7 +920,7 @@ function App() {
     className: "l"
   }, STATUS[g].label)))), /*#__PURE__*/React.createElement("div", {
     className: "ctx"
-  }, market === "kr" ? /*#__PURE__*/React.createElement(React.Fragment, null, "오늘 기준충족 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), " (A 60 / B 70점 이상). 투자 판단은 참고용으로만 활용하세요.") : /*#__PURE__*/React.createElement(React.Fragment, null, "환율 페널티 적용 중 (", fmt(data.fx_usdkrw), "원). 기준충족 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), " (A 70 / B 65점 이상).")), /*#__PURE__*/React.createElement("div", {
+  }, market === "kr" ? /*#__PURE__*/React.createElement(React.Fragment, null, "오늘 기준충족 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), " (A 60 / B 70 / C 75점 이상). 투자 판단은 참고용으로만 활용하세요.") : /*#__PURE__*/React.createElement(React.Fragment, null, (usFxPenalty ? "환율 페널티 적용 중 (" : "환율 ("), fmt(data.fx_usdkrw), "원). 기준충족 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), " (A 70 / B 65 / C 75점 이상).")), /*#__PURE__*/React.createElement("div", {
     className: "chips"
   }, [["all", "전체"], ["buy", "✅ 기준충족"], ["hold", "대기"]].map(([k, l]) => /*#__PURE__*/React.createElement("button", {
     key: k,
@@ -970,7 +977,7 @@ function App() {
     }, "★"), /*#__PURE__*/React.createElement("span", {
       className: "name"
     }, x.name), /*#__PURE__*/React.createElement("span", {
-      className: `typetag ${x.type === "A" ? "ta" : "tb"}`
+      className: `typetag ${tv3 === "A" ? "ta" : tv3 === "B" ? "tb" : "tc"}`
     }, x.type_v3_0 || x.type)), /*#__PURE__*/React.createElement("div", {
       className: "drv"
     }, drv)), /*#__PURE__*/React.createElement("div", {

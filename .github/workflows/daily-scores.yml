@@ -13,7 +13,16 @@ on:
     #
     # ② 미국장 기준 약 06:13 ET = 10:13 UTC.  (매일 — 주말·휴장 포함)
     - cron: "13 10 * * *"
+    #
+    # ⚠️ 실제 운영: 위 두 시각에는 외부 스케줄러가 workflow_dispatch로 정시 실행하고(20:47:03·10:13:03 UTC),
+    #    GitHub 예약 실행은 보통 2~7시간 늦게 '추가로' 돈다(→ 하루 약 4회 커밋). 늦은 예약 실행이
+    #    장중에 걸려도 engine.py가 거래소 세션 기준으로 미확정 봉을 버리므로 장중가가 커밋되지 않는다.
   workflow_dispatch:   # ← Actions 탭에서 "Run workflow" 버튼으로 수동 실행(테스트용)
+
+# 같은 시각에 외부 실행·예약 실행이 겹치면 순서대로 하나씩(동시에 돌며 서로의 커밋을 덮지 않게)
+concurrency:
+  group: daily-scores
+  cancel-in-progress: false
 
 # scores.json을 다시 커밋해야 하므로 쓰기 권한 부여
 permissions:
@@ -57,3 +66,7 @@ jobs:
             done
             if [ "$ok" != "1" ]; then echo "푸시 3회 실패"; exit 1; fi
           fi
+
+      # 데이터는 이미 커밋됨. 치명 이상(수집 실패·검증 실패)이 2회 연속이면 여기서 실패 → GitHub 실패 메일.
+      - name: 데이터 헬스체크
+        run: python healthcheck.py

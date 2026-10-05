@@ -1,4 +1,7 @@
-requests
-beautifulsoup4
-holidays
-exchange_calendars
+# 버전 고정 — GitHub Actions(python 3.12)에서 2026-10-04 실제로 설치·동작한 버전.
+# 올릴 때는 로컬/Actions에서 engine.py를 한 번 돌려 scores.json이 정상인지 확인 후 함께 바꿀 것.
+requests==2.34.2
+beautifulsoup4==4.15.0
+holidays==0.105
+exchange_calendars==4.13.2
+pandas==3.0.6
