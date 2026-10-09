@@ -1,6 +1,6 @@
 {
-  "as_of": "2026-10-09 05:50   🛑 한국장 휴장(한글날)",
-  "fx_usdkrw": 1341.82,
+  "as_of": "2026-10-09 09:44   🛑 한국장 휴장(한글날)",
+  "fx_usdkrw": 1343.48,
   "fx_penalty": 0,
   "dart_filled_kr": 0,
   "yahoo_filled_kr": 42,
@@ -6841,5 +6841,8 @@
       "exclude_reason_code": null,
       "exclude_reason": null
     }
-  ]
+  ],
+  "stale_guard": {
+    "us": "2026-10-08 데이터 유지(야후가 2026-10-07까지만 반환)"
+  }
 }
