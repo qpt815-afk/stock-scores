@@ -1,1 +1,256 @@
-{"last": {}, "brief": {}}
+{
+ "brief": {},
+ "last": {
+  "AAPL": {
+   "date": "2026-10-15",
+   "gate": "ok",
+   "total": 70
+  },
+  "ABBV": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 68
+  },
+  "AMAT": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 50
+  },
+  "AMD": {
+   "date": "2026-10-15",
+   "gate": "exclude",
+   "total": 0
+  },
+  "AMZN": {
+   "date": "2026-10-15",
+   "gate": "breakout_watch",
+   "total": 90
+  },
+  "ANET": {
+   "date": "2026-10-15",
+   "gate": "exclude",
+   "total": 0
+  },
+  "AVGO": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 57
+  },
+  "BAC": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 58
+  },
+  "BRK-B": {
+   "date": "2026-10-15",
+   "gate": "ok",
+   "total": 82
+  },
+  "CAT": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 56
+  },
+  "COST": {
+   "date": "2026-10-15",
+   "gate": "breakout_watch",
+   "total": 72
+  },
+  "CRWD": {
+   "date": "2026-10-15",
+   "gate": "exclude",
+   "total": 0
+  },
+  "CSCO": {
+   "date": "2026-10-15",
+   "gate": "breakout_watch",
+   "total": 87
+  },
+  "CVX": {
+   "date": "2026-10-15",
+   "gate": "ok",
+   "total": 74
+  },
+  "DELL": {
+   "date": "2026-10-15",
+   "gate": "exclude",
+   "total": 0
+  },
+  "GE": {
+   "date": "2026-10-15",
+   "gate": "ok",
+   "total": 79
+  },
+  "GEV": {
+   "date": "2026-10-15",
+   "gate": "exclude",
+   "total": 0
+  },
+  "GOOG": {
+   "date": "2026-10-15",
+   "gate": "ok",
+   "total": 79
+  },
+  "GS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 54
+  },
+  "HD": {
+   "date": "2026-10-15",
+   "gate": "ok",
+   "total": 67
+  },
+  "INTC": {
+   "date": "2026-10-15",
+   "gate": "exclude",
+   "total": 0
+  },
+  "JNJ": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 65
+  },
+  "JPM": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 79
+  },
+  "KLAC": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 52
+  },
+  "KO": {
+   "date": "2026-10-15",
+   "gate": "exclude",
+   "total": 0
+  },
+  "LLY": {
+   "date": "2026-10-15",
+   "gate": "breakout_watch",
+   "total": 85
+  },
+  "LRCX": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 53
+  },
+  "MA": {
+   "date": "2026-10-15",
+   "gate": "exclude",
+   "total": 0
+  },
+  "META": {
+   "date": "2026-10-15",
+   "gate": "ok",
+   "total": 81
+  },
+  "MRK": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 54
+  },
+  "MS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 60
+  },
+  "MSFT": {
+   "date": "2026-10-15",
+   "gate": "ok",
+   "total": 70
+  },
+  "MU": {
+   "date": "2026-10-15",
+   "gate": "exclude",
+   "total": 0
+  },
+  "NFLX": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 57
+  },
+  "NVDA": {
+   "date": "2026-10-15",
+   "gate": "ok",
+   "total": 73
+  },
+  "ORCL": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 67
+  },
+  "PANW": {
+   "date": "2026-10-15",
+   "gate": "exclude",
+   "total": 0
+  },
+  "PG": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 59
+  },
+  "PLTR": {
+   "date": "2026-10-15",
+   "gate": "ok",
+   "total": 78
+  },
+  "PM": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 68
+  },
+  "RTX": {
+   "date": "2026-10-15",
+   "gate": "setup",
+   "total": 84
+  },
+  "SPCX": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 56
+  },
+  "TMO": {
+   "date": "2026-10-15",
+   "gate": "ok",
+   "total": 74
+  },
+  "TSLA": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 39
+  },
+  "TXN": {
+   "date": "2026-10-15",
+   "gate": "ok",
+   "total": 84
+  },
+  "UNH": {
+   "date": "2026-10-15",
+   "gate": "breakout_watch",
+   "total": 86
+  },
+  "V": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 66
+  },
+  "WFC": {
+   "date": "2026-10-15",
+   "gate": "exclude",
+   "total": 0
+  },
+  "WMT": {
+   "date": "2026-10-15",
+   "gate": "breakout_watch",
+   "total": 77
+  },
+  "XOM": {
+   "date": "2026-10-15",
+   "gate": "ok",
+   "total": 74
+  }
+ },
+ "updated_at": "2026-10-15T00:29:17+09:00"
+}
