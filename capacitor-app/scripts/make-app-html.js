@@ -55,7 +55,7 @@ html = html.replace(anchor, appScripts + anchor);
 ok("앱 전용 스크립트 삽입: ads.bundle.js · ads.js · native.bundle.js");
 
 /* 1-c) 표시용 주석 */
-html = html.replace("<!doctype html>", "<!doctype html>\n<!-- 생성 파일: capacitor-app/scripts/make-app-html.js 가 저장소 루트 index.html(웹 정본)에서 만든다. 직접 고치지 말 것. -->");
+html = html.replace(/<!doctype html>/i, "<!DOCTYPE html>\n<!-- 생성 파일: capacitor-app/scripts/make-app-html.js 가 저장소 루트 index.html(웹 정본)에서 만든다. 직접 고치지 말 것. -->");
 if (!fs.existsSync(WWW)) fs.mkdirSync(WWW, { recursive: true });
 fs.writeFileSync(path.join(WWW, "index.html"), html);
 ok("www/index.html 생성 (" + html.length.toLocaleString() + " bytes)");
