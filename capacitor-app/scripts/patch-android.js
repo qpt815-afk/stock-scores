@@ -6,7 +6,7 @@
    1) AndroidManifest.xml 에 AdMob APP ID <meta-data> 삽입/갱신
    2) MainActivity launchMode 를 singleTop 으로
    3) android/app/build.gradle 의 versionCode / versionName 설정
-   4) android/variables.gradle 의 compileSdk / targetSdk 를 TARGET_SDK 로
+   4) android/variables.gradle 의 compileSdk / targetSdk 를 TARGET_SDK 로, minSdk 를 MIN_SDK(24) 로
       → Google Play 대상 API 수준 요구사항 (2026-08-31 기한: API 36)
    5) 릴리스 서명 설정 주입 (출시/upload-keystore.jks + 키스토어_비밀번호.txt)
       → `gradlew bundleRelease` 만으로 서명된 AAB 생성
@@ -33,6 +33,7 @@ var VERSION_NAME = "3.4"; // ← 다음 출시 이름 — 실제 출시 전에 �
 
 // ★ 대상 API 수준 — Google Play 요구사항 (2026-08-31까지 36 필수, 매년 상향됨)
 var TARGET_SDK = 36;
+var MIN_SDK = 24;   // Play 자동 보호(앱 무결성)가 minSdk 24 이상을 요구 — 2026-10-14 내부 테스트 업로드가 23 으로 거부됨. Android 7.0+ (국내 기기 사실상 전부)
 /* ==================================================================== */
 
 var fs = require("fs");
@@ -89,8 +90,9 @@ if (fs.existsSync(VARS)) {
   var vg = fs.readFileSync(VARS, "utf8");
   vg = vg.replace(/compileSdkVersion\s*=\s*\d+/, "compileSdkVersion = " + TARGET_SDK);
   vg = vg.replace(/targetSdkVersion\s*=\s*\d+/, "targetSdkVersion = " + TARGET_SDK);
+  vg = vg.replace(/minSdkVersion\s*=\s*\d+/, "minSdkVersion = " + MIN_SDK);
   fs.writeFileSync(VARS, vg);
-  ok("compileSdk / targetSdk = " + TARGET_SDK + " (Google Play 대상 API 요구사항)");
+  ok("compileSdk / targetSdk = " + TARGET_SDK + " · minSdk = " + MIN_SDK + " (Google Play 대상 API · 자동 보호 요구사항)");
 } else {
   console.log("  ⚠ android/variables.gradle 이 없어 SDK 버전 보정을 건너뜀 — Play 대상 API 미달로 업로드 거부될 수 있습니다!");
 }

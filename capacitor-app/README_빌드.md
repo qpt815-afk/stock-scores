@@ -47,7 +47,7 @@ cd android && .\gradlew.bat bundleRelease   # 서명된 AAB → app/build/output
 
 ## 잊지 말 것
 1. **`www/ads.js` CONFIG**: `TEST_MODE: false` 확인 (v3.1부터 false 반영됨 — 개발 중 실기기 테스트 시엔 true로 잠깐 되돌리기, 실광고 본인 클릭 금지!)
-2. **`scripts/patch-android.js` 상단**: versionCode 증가 (v3.3 = 6, **v3.4 = 7**, 다음은 8) / `TARGET_SDK`는 Play 요구사항 상향 시 갱신 (2026-08-31 기한 = 36 반영됨)
+2. **`scripts/patch-android.js` 상단**: versionCode 증가 (v3.3 = 6, **v3.4 = 7**, 다음은 8) / `TARGET_SDK`는 Play 요구사항 상향 시 갱신 (2026-08-31 기한 = 36 반영됨) / `MIN_SDK = 24` — Play **자동 보호(앱 무결성)** 가 켜져 있어 minSdk 23 AAB 는 업로드가 거부된다(2026-10-14 확인)
 3. 같은 keystore(`출시/upload-keystore.jks`, 별칭 upload)로 서명 — patch가 자동 주입 (출시/키스토어_비밀번호.txt 필요)
 4. 화면을 바꿀 땐 **루트 `index.html`** 을 고치고 `npm run sync`(html 포함) — `www/index.html` 직접 수정 금지
 5. **실기기 확인(v3.4)**: 첫 실행 온보딩 → 관심종목 저장 → 알림 권한 허용 → 브리핑 탭 '내 관심종목' 카드에 스위치 ON 확인.
