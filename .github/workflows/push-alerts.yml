@@ -1,0 +1,80 @@
+name: Push alerts (관심종목 점수 변동 · 아침 브리핑)
+
+# 언제: 평일 08:30 KST(한국 점수 갱신 05:47 뒤) = 전날 23:30 UTC · 평일 19:45 KST(미국 점수 갱신 19:13 뒤) = 10:45 UTC
+# 무엇: tools/push_alerts.py 가 scores.json 과 tools/push_state.json(마지막 알림 기준선)을 비교해
+#       FCM 토픽(s_<ticker>)으로 점수 변동 알림, brief_kr 로 아침 브리핑을 보낸다. 서버에 사용자 데이터 없음.
+# 비밀: FCM_SERVICE_ACCOUNT (Firebase 콘솔 > 프로젝트 설정 > 서비스 계정 > 새 비공개 키 생성 → JSON 전체).
+#       없으면 dry-run 으로만 돌고 실패하지 않는다(Firebase 설정 전 단계).
+on:
+  schedule:
+    - cron: "30 23 * * 0-4"   # 월~금 08:30 KST (UTC 일~목 23:30)
+    - cron: "45 10 * * 1-5"   # 월~금 19:45 KST
+  workflow_dispatch:
+    inputs:
+      market:
+        description: "kr / us / both"
+        default: "both"
+      brief:
+        description: "아침 브리핑도 보낼지 (true/false)"
+        default: "false"
+      dry_run:
+        description: "보내지 않고 출력만 (true/false)"
+        default: "true"
+
+permissions:
+  contents: write   # tools/push_state.json 커밋
+
+concurrency:
+  group: push-alerts
+  cancel-in-progress: false
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -q google-auth requests
+
+      - name: 실행 인자 결정
+        id: args
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            A="--market ${{ github.event.inputs.market }}"
+            [ "${{ github.event.inputs.brief }}" = "true" ] && A="$A --brief"
+            [ "${{ github.event.inputs.dry_run }}" = "true" ] && A="$A --dry-run"
+          elif [ "${{ github.event.schedule }}" = "30 23 * * 0-4" ]; then
+            A="--market kr --brief"
+          else
+            A="--market us"
+          fi
+          echo "args=$A" >> "$GITHUB_OUTPUT"
+          echo "args: $A"
+
+      - name: 푸시 발송
+        env:
+          FCM_SERVICE_ACCOUNT: ${{ secrets.FCM_SERVICE_ACCOUNT }}
+        run: python tools/push_alerts.py ${{ steps.args.outputs.args }}
+
+      - name: 기준선(push_state.json) 커밋
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add tools/push_state.json
+          if git diff --staged --quiet; then
+            echo "변경 없음"
+          else
+            git commit -m "push-alerts: state $(date -u +%Y-%m-%dT%H:%MZ)"
+            ok=0
+            for i in 1 2 3; do
+              if git pull --rebase --autostash origin main && git push; then ok=1; break; fi
+              echo "원격이 앞서 있어 재시도 ${i}…"; sleep 5
+            done
+            [ "$ok" = "1" ] || { echo "푸시 3회 실패"; exit 1; }
+          fi

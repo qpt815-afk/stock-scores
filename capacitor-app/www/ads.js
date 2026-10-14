@@ -17,7 +17,7 @@
     //   1) 아래 BANNER_ID / INTERSTITIAL_ID 에 실제 ID 붙여넣기
     //   2) TEST_MODE 를 false 로 변경
     //   ※ 실제 ID 상태에서 본인 폰으로 광고를 많이 누르면 계정 정지 위험! 개발 중엔 반드시 TEST_MODE 유지
-    TEST_MODE: true,
+    TEST_MODE: false, // 2026-07-22 v3.1 출시 빌드: 실광고 ON (배너-only)
 
     // 실제 광고 단위 ID (2026-07-21 AdMob 콘솔에서 발급 완료)
     BANNER_ID: "ca-app-pub-3072905039105762/7444011752",        // 하단배너

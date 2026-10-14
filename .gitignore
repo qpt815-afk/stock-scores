@@ -1,0 +1,78 @@
+# ═══════════════════════════════════════════════════════════
+#  비밀 — 절대 커밋 금지 (이 저장소는 공개: github.com/qpt815-afk/stock-scores)
+# ═══════════════════════════════════════════════════════════
+# 앱 서명 키 + 평문 비밀번호. 유출되면 제3자가 앱 업데이트에 서명할 수 있다.
+capacitor-app/출시/
+*.jks
+*.keystore
+*비밀번호*
+*.p8
+*.p12
+*.mobileprovision
+
+# Firebase 앱 설정(푸시) — 공개 저장소에 두지 않는다. capacitor-app/firebase/google-services.json
+capacitor-app/firebase/
+
+# Supabase 통계 토큰(ms_stats / ms_weekly / admin_stats)이 하드코딩된 파일들.
+maesuscouter_dashboard.html
+supabase_ms_ping.sql
+supabase_적용할_SQL_통합본.sql
+supabase_*.sql
+
+# 주간 리포트(내부 지표) + 리포트 설정(토큰)
+리포트/
+
+# 일반 비밀 파일
+.env
+.env.*
+*.pem
+service-account*.json
+
+# ═══════════════════════════════════════════════════════════
+#  빌드 산출물 / 의존성
+# ═══════════════════════════════════════════════════════════
+node_modules/
+# cap add android 로 매번 재생성 (ios/ 는 CI가 쓰므로 커밋 대상)
+capacitor-app/android/
+# npm run bundles 로 생성 (ads / native / rc)
+capacitor-app/www/*.bundle.js
+build/
+dist/
+__pycache__/
+*.pyc
+
+# ═══════════════════════════════════════════════════════════
+#  로컬 작업 부산물 (공유 가치 없음)
+# ═══════════════════════════════════════════════════════════
+_to_delete/
+_대기중_수동적용/
+_claude_vm_*
+_disk_report*
+_free_c_safe.cmd
+_run_brief_win*
+comfy_*.txt
+comfy_*.ps1
+scan_c*.ps1
+c_scan_report.txt
+wiztree_folders.csv
+*.log
+*.bak
+*.bak_*
+
+# OS
+Thumbs.db
+.DS_Store
+
+# TTS 모델 가중치 (2026-08-26) — 386MB 바이너리. 절대 커밋하지 말 것
+네이버블로그/_shorts_v2/_model_supertonic3/
+네이버블로그/_shorts_v2/_dl_parts/
+네이버블로그/_shorts_v2/work/*/audio/
+
+# 쇼츠 렌더 산출물 (2026-09-27) — 회당 ~85MB 짜리 작업폴더가 한때 add 돼 .git 이 2.2GB 가 됐었다
+네이버블로그/_shorts_v2/work/*/
+*.mp4
+*.wav
+
+# 백테스트 캐시·산출물(내부 검증용)
+backtest/cache/
+backtest/out/

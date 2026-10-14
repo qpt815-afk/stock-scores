@@ -157,6 +157,48 @@
   .dnote{ color:#c4c9d2; line-height:1.55; }
   .star{ color:var(--gold); font-size:12px; margin-right:1px; }
 
+  /* ── v3.4 관심종목 · 알림 · 온보딩 ───────────────────────────── */
+  .wbtn{ width:34px; height:34px; display:grid; place-items:center; border:0; background:transparent; color:var(--faint); cursor:pointer; flex-shrink:0; margin-left:-4px; border-radius:9px; }
+  .wbtn.on{ color:var(--gold); }
+  .wbtn:active{ background:var(--card-2); }
+  .wcard{ margin:2px 16px 10px; background:var(--card); border:1px solid rgba(210,166,78,.28); border-radius:16px; padding:15px 16px; }
+  .wcard-h{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .wcard-h .l{ font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); }
+  .wcard-h .r{ font-size:12px; color:var(--faint); }
+  .wrow{ display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line-soft); cursor:pointer; }
+  .wrow:last-of-type{ border-bottom:0; }
+  .wsc{ font-size:22px; font-weight:800; min-width:38px; letter-spacing:-.03em; }
+  .wnm{ flex:1; min-width:0; font-size:15px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .wnm small{ display:block; font-size:12px; font-weight:500; color:var(--muted); margin-top:2px; }
+  .wdl{ font-size:12.5px; font-weight:700; text-align:right; white-space:nowrap; }
+  .wdl small{ display:block; font-weight:500; color:var(--faint); font-size:11px; }
+  .wempty{ font-size:14px; line-height:1.6; color:var(--muted); }
+  .wbtn-row{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .btn-s{ padding:9px 14px; border-radius:10px; border:1px solid var(--line); background:var(--card-2); color:var(--text); font-family:inherit; font-size:13.5px; font-weight:700; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
+  .btn-s.gold{ background:var(--gold); color:#1a1304; border-color:var(--gold); }
+  .btn-s:disabled{ opacity:.45; cursor:default; }
+  .tgl{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 0 2px; font-size:13.5px; color:var(--muted); }
+  .tgl b{ color:var(--text); font-weight:600; }
+  .sw{ width:40px; height:24px; border-radius:12px; background:var(--line); position:relative; border:0; cursor:pointer; flex-shrink:0; transition:.15s; padding:0; }
+  .sw::after{ content:""; position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; transition:.15s; }
+  .sw.on{ background:var(--ok); } .sw.on::after{ left:19px; }
+  .sw:disabled{ opacity:.4; cursor:default; }
+  .webhint{ margin:0 16px 10px; padding:11px 13px; border:1px dashed rgba(210,166,78,.45); border-radius:12px; font-size:13px; line-height:1.55; color:var(--muted); display:flex; gap:10px; align-items:center; }
+  .webhint a{ color:var(--gold); font-weight:700; text-decoration:none; white-space:nowrap; }
+  .webhint .x{ margin-left:auto; color:var(--faint); background:transparent; border:0; font-size:18px; cursor:pointer; line-height:1; }
+  .onb-bg{ position:fixed; inset:0; background:rgba(0,0,0,.62); z-index:50; display:flex; align-items:flex-end; justify-content:center; }
+  .onb{ width:100%; max-width:460px; background:var(--card); border:1px solid var(--line); border-radius:20px 20px 0 0; padding:20px 18px calc(18px + env(safe-area-inset-bottom)); max-height:88dvh; overflow-y:auto; }
+  .onb h2{ margin:0 0 6px; font-size:20px; font-weight:800; letter-spacing:-.02em; }
+  .onb p{ margin:0 0 12px; font-size:13.5px; line-height:1.6; color:var(--muted); }
+  .onb .grp{ font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin:10px 0 6px; }
+  .pick{ display:flex; flex-wrap:wrap; gap:7px; }
+  .pick button{ padding:8px 12px; border-radius:9px; border:1px solid var(--line); background:transparent; color:var(--muted); font-family:inherit; font-size:13.5px; font-weight:600; cursor:pointer; }
+  .pick button.on{ border-color:var(--gold); color:var(--text); background:rgba(210,166,78,.12); }
+  .onb .acts{ display:flex; gap:8px; margin-top:16px; }
+  .onb .acts .btn-s{ flex:1; justify-content:center; padding:12px; font-size:15px; }
+  .onb .skip{ display:block; text-align:center; margin-top:12px; color:var(--faint); font-size:13px; background:transparent; border:0; width:100%; cursor:pointer; font-family:inherit; }
+  .onb .fine, .fine{ font-size:11.5px; color:var(--faint); margin-top:10px; line-height:1.5; }
+
   @media (prefers-reduced-motion:reduce){ *{ animation:none !important; transition:none !important; } }
 
   /* ── 가독성: 본문 글자 크기 살짝 키움 (약 +1px) ───────────────── */
@@ -492,10 +534,13 @@ var d=null!=c&&c.hydratedSources||null,e=!1,f="",g=aj;null!==c&&void 0!==c&&(!0=
 function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmountComponentAtNode=function(a){if(!Vd(a))throw Error(m(40));return a._reactRootContainer?(yb(function(){Wd(null,null,a,!1,function(){a._reactRootContainer=null;a[Ja]=null})}),!0):!1};Q.unstable_batchedUpdates=Tf;Q.unstable_renderSubtreeIntoContainer=function(a,b,c,d){if(!Vd(c))throw Error(m(200));if(null==a||void 0===a._reactInternals)throw Error(m(38));return Wd(a,b,c,!1,d)};Q.version="18.3.1-next-f1338f8080-20240426"});
 })();
 </script>
-<script src="rc.bundle.js"></script>
-<script src="premium.js"></script>
+<!-- v3.4: 관심종목·푸시·리뷰(engage.js) + 익명 집계(ping.js). 앱 빌드에서는 make-app-html.js 가 네이티브 번들을 앞에 끼워 넣는다 -->
+<!-- 앱 전용(네이티브 브리지): AdMob · Push/FCM/인앱리뷰/설치리퍼러. make-app-html.js 가 삽입 -->
 <script src="ads.bundle.js"></script>
 <script src="ads.js"></script>
+<script src="native.bundle.js"></script>
+<script src="engage.js"></script>
+<script src="ping.js"></script>
 <script>const {
   useState,
   useEffect
@@ -580,6 +625,9 @@ const RefreshCw = p => /*#__PURE__*/React.createElement(Svg, p, /*#__PURE__*/Rea
 }), /*#__PURE__*/React.createElement("path", {
   d: "M21 3v5h-5"
 }));
+const Bookmark = ({ on, size = 18 }) => /*#__PURE__*/React.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: on ? "currentColor" : "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", style: { display: "block" } }, /*#__PURE__*/React.createElement("path", { d: "M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" }));
+const Bell = p => /*#__PURE__*/React.createElement(Svg, p, /*#__PURE__*/React.createElement("path", { d: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" }), /*#__PURE__*/React.createElement("path", { d: "M13.73 21a2 2 0 0 1-3.46 0" }));
+const E = () => window.Engage;  // engage.js (관심종목·푸시·리뷰) — 없으면 호출부가 건너뛴다
 const AlertCircle = p => /*#__PURE__*/React.createElement(Svg, p, /*#__PURE__*/React.createElement("circle", {
   cx: "12",
   cy: "12",
@@ -645,7 +693,6 @@ const Pill = ({
   }, s.icon, " ", label || s.label);
 };
 function CandleChart({ ohlc }) {
-  if (window.Premium && !window.Premium.isActive() && window.Premium.cfg.lockCharts) return window.Premium.lockedChart();
   if (!ohlc || ohlc.length < 2)
     return /*#__PURE__*/React.createElement("div", { className: "muted", style: { padding: "12px 2px", fontSize: "12px" } }, "차트 데이터가 아직 없어요");
   const W = 320, H = 150, pT = 8, pB = 14, pL = 2, pR = 2;
@@ -689,7 +736,42 @@ function App() {
   const [candleData, setCandleData] = useState(null);
   const [openIdx, setOpenIdx] = useState(null);
   const [openBrief, setOpenBrief] = useState(null);
-  const [premium, setPremium] = useState(function () { return !!(window.Premium && window.Premium.isActive()); });
+  // ── v3.4 관심종목·알림·온보딩 (engage.js). Engage 상태가 바뀌면 다시 그린다 ──
+  const [, bump] = useState(0);
+  const [onb, setOnb] = useState(() => !!(E() && E().onboard.needed()));
+  const [pick, setPick] = useState([]);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [jump, setJump] = useState(null);   // 푸시 탭 / 관심카드 탭 → 특정 종목 열기
+  useEffect(() => {
+    if (!E()) return;
+    const off = E().onChange(() => bump(x => x + 1));
+    E().boot();
+    E().push.onOpen(d => { if (d && d.ticker) setJump({ market: d.market === "us" ? "us" : "kr", ticker: d.ticker }); });
+    return off;
+  }, []);
+  useEffect(() => {
+    if (!jump || !data) return;
+    setMarket(jump.market); setTab("score"); setFilter("all"); setOpen(jump.ticker); ensureCandles();
+    const t = jump.ticker; setJump(null);
+    setTimeout(() => { try { const el = document.getElementById("row-" + t); if (el) el.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) {} }, 150);
+  }, [jump, data]);
+  const watchList = E() ? E().watch.list() : [];
+  const pushOn = !!(E() && E().push.isOn());
+  const pushAvail = !!(E() && E().push.available());
+  const marketUp = (() => { try { const m = data && data.market && data.market[market]; return m && m.indices && m.indices[0] ? m.indices[0].chg >= 0 : null; } catch (e) { return null; } })();
+  // 상세(근거) 열람 = 리뷰 요청 조건 중 하나 + (앱) 전면광고 카운터. 리뷰는 버튼 없이 조건 충족 시에만 조용히 1회.
+  const openDetail = () => { if (window.Ads && window.Ads.chartOpened) window.Ads.chartOpened(); if (!E()) return; E().review.noteDetail(); E().review.maybeAsk({ marketUp }); };
+  const toggleWatch = (e, t) => { e.stopPropagation(); if (!E()) return; if (!E().watch.toggle(t)) alert("관심종목은 30개까지 등록할 수 있어요."); };
+  const enablePush = async () => {
+    if (!E() || pushBusy) return; setPushBusy(true);
+    try { const r = await E().push.enable(); if (!r.ok && r.reason === "denied") alert("알림 권한이 꺼져 있어요. 휴대폰 설정 > 앱 > 매수 스카우터 > 알림에서 켤 수 있어요."); }
+    finally { setPushBusy(false); }
+  };
+  const finishOnb = async (skipped) => {
+    if (!E()) { setOnb(false); return; }
+    if (!skipped && pick.length) { E().watch.setAll(pick); if (E().push.available() && !E().push.isOn()) await enablePush(); }
+    E().onboard.done(skipped ? 0 : pick.length, skipped); setOnb(false); setPick([]);
+  };
   const ensureCandles = () => {
     if (candleData) return;
     fetch(`${CANDLES_URL}?t=${Date.now()}`).then(r => r.ok ? r.json() : null)
@@ -705,13 +787,13 @@ function App() {
     }).then(d => {
       setData(d);
       setLoading(false);
+      try { if (E()) E().last.update(d); } catch (e) {}
     }).catch(e => {
       setErr(e.message || "불러오기 실패");
       setLoading(false);
     });
   };
   useEffect(load, []);
-  useEffect(function () { return window.Premium ? window.Premium.onChange(setPremium) : undefined; }, []);
   const raw = data ? (market === "kr" ? data.kr : data.us) || [] : [];
   const cur = market === "kr" ? "₩" : "$";
   const mb = data && data.market ? data.market[market] : null;
@@ -722,6 +804,7 @@ function App() {
   let scored = raw.slice();
   if (filter === "buy") scored = scored.filter(x => isBuyable(x.gate));
   if (filter === "hold") scored = scored.filter(x => !isBuyable(x.gate));
+  if (filter === "watch") scored = scored.filter(x => E() && E().watch.has(x.ticker));
   scored.sort((a, b) => (b[sortKey] ?? -1) - (a[sortKey] ?? -1));
   return /*#__PURE__*/React.createElement("div", {
     className: "app-page"
@@ -739,7 +822,7 @@ function App() {
     className: "date"
   }, data?.as_of ? `${data.as_of} 기준` : "—")), /*#__PURE__*/React.createElement("div", {
     className: "icorow"
-  }, (window.Premium ? window.Premium.headerBtn() : null), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "icobtn",
     onClick: load,
     title: "새로고침"
@@ -761,7 +844,6 @@ function App() {
   }, "🇰🇷 한국"), /*#__PURE__*/React.createElement("button", {
     className: market === "us" ? "on" : "",
     onClick: () => {
-      if (window.Premium && !window.Premium.isActive() && window.Premium.cfg.lockUSMarket) { window.Premium.showPaywall("us"); return; }
       setMarket("us");
       setOpen(null);
     }
@@ -804,7 +886,7 @@ function App() {
     className: "ix",
     key: ix.name,
     style: { cursor: "pointer" },
-    onClick: () => { const opening = openIdx !== ix.name; setOpenIdx(opening ? ix.name : null); ensureCandles(); if (opening && window.Ads) window.Ads.chartOpened(); }
+    onClick: () => { const opening = openIdx !== ix.name; setOpenIdx(opening ? ix.name : null); ensureCandles(); if (opening && window.Ads && window.Ads.chartOpened) window.Ads.chartOpened(); }
   }, /*#__PURE__*/React.createElement("span", {
     className: "ix-n"
   }, ix.name), /*#__PURE__*/React.createElement("span", {
@@ -826,7 +908,17 @@ function App() {
     style: {
       color: chgColor(-1)
     }
-  }, mb.down, "↓"), " · 평균 등락 ", mb.avg >= 0 ? "+" : "", mb.avg, "%")), /*#__PURE__*/React.createElement("div", {
+  }, mb.down, "↓"), " · 평균 등락 ", mb.avg >= 0 ? "+" : "", mb.avg, "%")), E() && /*#__PURE__*/React.createElement(WatchCard, {
+    data: data, watchList: watchList, pushOn: pushOn, pushAvail: pushAvail, pushBusy: pushBusy, enablePush: enablePush,
+    onPick: () => { setPick(watchList.slice()); setOnb(true); },
+    onJump: (m, t) => setJump({ market: m, ticker: t })
+  }), E() && E().webhint.show() && /*#__PURE__*/React.createElement("div", {
+    className: "webhint"
+  }, /*#__PURE__*/React.createElement(Bell, { size: 16 }), /*#__PURE__*/React.createElement("span", null, "앱에서는 관심종목 점수가 크게 움직일 때 알림을 받을 수 있어요. ", /*#__PURE__*/React.createElement("a", {
+    href: "https://maesuscouter.kr/web/", target: "_blank", rel: "noopener"
+  }, "무료 앱 받기 →")), /*#__PURE__*/React.createElement("button", {
+    className: "x", "aria-label": "닫기", onClick: () => E().webhint.dismiss()
+  }, "×")), /*#__PURE__*/React.createElement("div", {
     className: "brief"
   }, /*#__PURE__*/React.createElement("div", {
     className: "brief-h"
@@ -850,7 +942,7 @@ function App() {
   }, /*#__PURE__*/React.createElement("div", {
     className: "brow",
     style: { cursor: "pointer" },
-    onClick: () => { const opening = openBrief !== x.ticker; setOpenBrief(opening ? x.ticker : null); ensureCandles(); if (opening && window.Ads) window.Ads.chartOpened(); }
+    onClick: () => { const opening = openBrief !== x.ticker; setOpenBrief(opening ? x.ticker : null); ensureCandles(); if (opening) openDetail(x.ticker); }
   }, /*#__PURE__*/React.createElement("span", {
     className: "brank"
   }, String(x.rank).padStart(2, "0")), /*#__PURE__*/React.createElement("span", {
@@ -915,7 +1007,7 @@ function App() {
     className: "ctx"
   }, market === "kr" ? /*#__PURE__*/React.createElement(React.Fragment, null, "오늘 기준충족 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), " (A 60 / B 70점 이상). 투자 판단은 참고용으로만 활용하세요.") : /*#__PURE__*/React.createElement(React.Fragment, null, "환율 페널티 적용 중 (", fmt(data.fx_usdkrw), "원). 기준충족 ", /*#__PURE__*/React.createElement("b", null, buyN, "종목"), " (A 70 / B 65점 이상).")), /*#__PURE__*/React.createElement("div", {
     className: "chips"
-  }, [["all", "전체"], ["buy", "✅ 기준충족"], ["hold", "대기"]].map(([k, l]) => /*#__PURE__*/React.createElement("button", {
+  }, [["all", "전체"], ["buy", "✅ 기준충족"], ["hold", "대기"], ["watch", "★ 관심" + (watchList.length ? " " + watchList.length : "")]].map(([k, l]) => /*#__PURE__*/React.createElement("button", {
     key: k,
     className: `chip ${filter === k ? "on" : ""}`,
     onClick: () => setFilter(k)
@@ -939,18 +1031,19 @@ function App() {
     style: {
       padding: "2px 12px 8px"
     }
-  }, (window.Premium ? window.Premium.visList(scored) : scored).map(x => {
-    const id = `${market}-${x.rank}`;
+  }, scored.map(x => {
+    const id = x.ticker;
     const s = STATUS[x.gate_v3_0] || STATUS[x.gate] || STATUS.pending;
     const star = x.disparity < -8;
     const tv3 = x.type_v3_0 || x.type;
     const drv = x.total == null ? `데이터대기` : tv3 === "A" ? `유형A · 이격도 ${x.disparity_score}점 (${x.disparity}%)` : tv3 === "B" ? `유형B · 회복 ${x.recovery_signal_count ?? 0}/3 · 손절 ${x.stop_loss_pct != null ? x.stop_loss_pct + "%" : "—"}` : tv3 === "C" ? `유형C 박스권 · 폭 ${x.range20_pct ?? "—"}% · 위치 ${x.box_position_pct ?? "—"}%` : `검토제외 · ${x.exclude_reason || "조건 미달"}`;
     const metrics = tv3 === "A" ? [["펀더", x.fundamental ?? "—", 20], ["시장추세", x.market_trend ?? "—", 15], ["정배열", x.alignment ?? "—", 15], ["이격도", x.disparity_score ?? "—", 15], ["거래량", x.volume ?? "—", 15], ["모멘텀", x.momentum ?? "—", 10], ["수급위험", x.market_risk ?? "—", 10]] : tv3 === "C" ? [["펀더", x.fundamental ?? "—", 15], ["가격안정", x.c_price_stability_score ?? "—", 20], ["박스안정", x.c_box_score ?? "—", 20], ["변동성수렴", x.c_contraction_score ?? "—", 15], ["거래량/돌파", x.c_volume_setup_score ?? "—", 15], ["시장안정", x.c_market_stability_score ?? "—", 10], ["손절", x.c_stop_risk_score ?? "—", 5]] : [["펀더", x.fundamental ?? "—", 20], ["가격매력", x.price_attraction ?? "—", 25], ["회복확인", x.recovery_score ?? "—", 25], ["수급반전", x.volume_flow ?? "—", 10], ["시장안정", x.market_stability ?? "—", 10], ["손절", x.stop_loss_score ?? "—", 10]];
     return /*#__PURE__*/React.createElement("div", {
-      key: id
+      key: id,
+      id: "row-" + id
     }, /*#__PURE__*/React.createElement("div", {
       className: "srow",
-      onClick: () => { const opening = open !== id; setOpen(opening ? id : null); ensureCandles(); if (opening && window.Ads) window.Ads.chartOpened(); }
+      onClick: () => { const opening = open !== id; setOpen(opening ? id : null); ensureCandles(); if (opening) openDetail(id); }
     }, /*#__PURE__*/React.createElement("span", {
       className: "bar",
       style: {
@@ -983,7 +1076,11 @@ function App() {
       style: {
         color: chgColor(x.chg_pct)
       }
-    }, x.chg_pct >= 0 ? "▲" : "▼", " ", Math.abs(x.chg_pct).toFixed(2), "%"))), open === id && /*#__PURE__*/React.createElement("div", {
+    }, x.chg_pct >= 0 ? "▲" : "▼", " ", Math.abs(x.chg_pct).toFixed(2), "%")), /*#__PURE__*/React.createElement("button", {
+      className: "wbtn" + (E() && E().watch.has(x.ticker) ? " on" : ""),
+      "aria-label": "관심종목",
+      onClick: e => toggleWatch(e, x.ticker)
+    }, /*#__PURE__*/React.createElement(Bookmark, { on: !!(E() && E().watch.has(x.ticker)) }))), open === id && /*#__PURE__*/React.createElement("div", {
       className: "detail"
     }, /*#__PURE__*/React.createElement("div", {
       className: "dtop"
@@ -1005,7 +1102,7 @@ function App() {
     }, x.fx_penalty))), /*#__PURE__*/React.createElement("div", {
       className: "dnote"
     }, x.gate_reason || (x.gate === "ok" && "✅ 기준충족 — 점수 기준을 충족했습니다(참고용).") || (x.gate === "hot" && "⚠️ 과열주의 — 종합점수는 높지만 이격도가 과열입니다.") || (x.gate === "below" && "대기 — 점수 기준 미달 구간.") || (x.gate === "pending" && "데이터대기 — 영업이익(펀더멘털) 데이터 산정 전."))));
-  }), (window.Premium ? window.Premium.upsellRow(scored) : null)), /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     className: "foot"
   }, "시세·지수는 매 평일 자동 갱신. 점수는 v3.1 체계로 산출한 참고용 정보이며 투자 조언이 아닙니다.")), /*#__PURE__*/React.createElement("div", {
     className: "tabbar"
@@ -1023,7 +1120,62 @@ function App() {
     size: 20
   }), " 점수 ", /*#__PURE__*/React.createElement("span", {
     className: "tdash"
-  })))));
+  }))), onb && data && /*#__PURE__*/React.createElement(Onboard, {
+    data: data, pick: pick, setPick: setPick, finish: finishOnb, native: pushAvail
+  })));
+}
+
+// ── v3.4 관심종목 카드(브리핑 탭 상단) ──
+function WatchCard({ data, watchList, pushOn, pushAvail, pushBusy, enablePush, onPick, onJump }) {
+  const rows = [];
+  ["kr", "us"].forEach(m => (data[m] || []).forEach(x => { if (watchList.indexOf(x.ticker) >= 0) rows.push({ m, x }); }));
+  rows.sort((a, b) => (b.x.total ?? -1) - (a.x.total ?? -1));
+  const briefOn = !!(E() && E().push.briefOn());
+  return /*#__PURE__*/React.createElement("div", { className: "wcard" },
+    /*#__PURE__*/React.createElement("div", { className: "wcard-h" },
+      /*#__PURE__*/React.createElement("span", { className: "l" }, "내 관심종목"),
+      /*#__PURE__*/React.createElement("span", { className: "r" }, rows.length ? rows.length + "종목 · 탭하면 근거 보기" : "")),
+    rows.length === 0 ? /*#__PURE__*/React.createElement("div", { className: "wempty" }, "관심종목을 등록해 두면 점수가 ±10점 넘게 움직이거나 기준충족에 들어오고 나갈 때 알려드려요.",
+        /*#__PURE__*/React.createElement("div", { className: "wbtn-row" }, /*#__PURE__*/React.createElement("button", { className: "btn-s gold", onClick: onPick }, "종목 고르기")))
+      : rows.map(({ m, x }) => {
+        const s = STATUS[x.gate_v3_0] || STATUS[x.gate] || STATUS.pending;
+        const d = E().last.delta(x.ticker);
+        return /*#__PURE__*/React.createElement("div", { className: "wrow", key: x.ticker, onClick: () => onJump(m, x.ticker) },
+          /*#__PURE__*/React.createElement("span", { className: "wsc", style: { color: s.color } }, x.total ?? "—"),
+          /*#__PURE__*/React.createElement("span", { className: "wnm" }, x.name, /*#__PURE__*/React.createElement("small", null, (m === "kr" ? "🇰🇷 " : "🇺🇸 ") + (x.display_label || s.label) + " · " + ((x.chg_pct ?? 0) >= 0 ? "▲" : "▼") + Math.abs(x.chg_pct ?? 0).toFixed(2) + "%")),
+          /*#__PURE__*/React.createElement("span", { className: "wdl", style: { color: d && d.d !== 0 ? (d.d > 0 ? "var(--ok)" : "var(--blocked)") : "var(--faint)" } },
+            d ? (d.d > 0 ? "+" : "") + d.d + "점" : "—", /*#__PURE__*/React.createElement("small", null, d ? "지난 방문 대비" : "첫 조회")));
+      }),
+    rows.length > 0 && /*#__PURE__*/React.createElement("div", { className: "wbtn-row" },
+      /*#__PURE__*/React.createElement("button", { className: "btn-s", onClick: onPick }, "종목 바꾸기")),
+    pushAvail ? /*#__PURE__*/React.createElement(React.Fragment, null,
+      /*#__PURE__*/React.createElement("div", { className: "tgl" }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "점수 변동 알림"), " · 관심종목 ±10점 / 기준충족 변동"),
+        /*#__PURE__*/React.createElement("button", { className: "sw" + (pushOn ? " on" : ""), "aria-label": "점수 변동 알림", disabled: pushBusy, onClick: () => pushOn ? E().push.disable() : enablePush() })),
+      /*#__PURE__*/React.createElement("div", { className: "tgl" }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "아침 브리핑"), " · 평일 08:30 시장 점수 요약"),
+        /*#__PURE__*/React.createElement("button", { className: "sw" + (pushOn && briefOn ? " on" : ""), "aria-label": "아침 브리핑", disabled: pushBusy || !pushOn, onClick: () => E().push.setBrief(!briefOn) })))
+      : null,
+    /*#__PURE__*/React.createElement("div", { className: "fine" }, "알림은 점수 변동 사실만 전합니다. 투자 권유가 아니며 판단과 책임은 본인에게 있습니다."));
+}
+
+// ── v3.4 온보딩 시트(첫 실행 · '종목 고르기') ──
+function Onboard({ data, pick, setPick, finish, native }) {
+  const kr = (data.kr || []).slice().sort((a, b) => a.rank - b.rank).slice(0, 10);
+  const us = (data.us || []).slice().sort((a, b) => a.rank - b.rank).slice(0, 8);
+  const tgl = t => setPick(p => p.indexOf(t) >= 0 ? p.filter(x => x !== t) : (p.length >= 30 ? p : p.concat([t])));
+  const grp = (label, list) => /*#__PURE__*/React.createElement(React.Fragment, null,
+    /*#__PURE__*/React.createElement("div", { className: "grp" }, label),
+    /*#__PURE__*/React.createElement("div", { className: "pick" }, list.map(x => /*#__PURE__*/React.createElement("button", {
+      key: x.ticker, className: pick.indexOf(x.ticker) >= 0 ? "on" : "", onClick: () => tgl(x.ticker)
+    }, x.name, " ", /*#__PURE__*/React.createElement("span", { style: { color: "var(--faint)", fontWeight: 500 } }, x.total ?? "—")))));
+  return /*#__PURE__*/React.createElement("div", { className: "onb-bg", onClick: e => { if (e.target === e.currentTarget) finish(true); } },
+    /*#__PURE__*/React.createElement("div", { className: "onb" },
+      /*#__PURE__*/React.createElement("h2", null, "관심종목 3개만 골라두세요"),
+      /*#__PURE__*/React.createElement("p", null, native ? "점수가 ±10점 넘게 움직이거나 기준충족에 들어오고 나가면 알려드려요. 하루 1~2번, 변동이 있을 때만." : "브리핑 첫 화면에서 점수 변화를 바로 볼 수 있어요. 알림은 앱에서 받을 수 있습니다."),
+      grp("🇰🇷 코스피 시총 상위", kr), grp("🇺🇸 미국 시총 상위", us),
+      /*#__PURE__*/React.createElement("div", { className: "acts" },
+        /*#__PURE__*/React.createElement("button", { className: "btn-s gold", disabled: !pick.length, onClick: () => finish(false) }, native ? "저장하고 알림 받기" : "저장")),
+      /*#__PURE__*/React.createElement("button", { className: "skip", onClick: () => finish(true) }, "나중에 할게요"),
+      /*#__PURE__*/React.createElement("div", { className: "fine" }, "관심종목은 이 기기에만 저장됩니다(서버에 계정·개인정보 없음). 점수는 참고용 정보이며 매수·매도 권유가 아닙니다.")));
 }
 ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(App, null));
 if ("serviceWorker" in navigator) {

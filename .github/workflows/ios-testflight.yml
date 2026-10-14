@@ -38,7 +38,7 @@ jobs:
         run: npm ci
 
       - name: JS 번들 빌드 (RevenueCat + AdMob)
-        run: npm run bundles
+        run: npm run html && npm run bundles   # html = 웹 정본(루트 index.html)에서 www/ 생성 (v3.4)
 
       - name: 웹 앱을 iOS 프로젝트로 동기화 (pod install 포함)
         run: npx cap sync ios
