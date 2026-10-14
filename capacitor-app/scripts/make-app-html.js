@@ -18,14 +18,23 @@ var fs = require("fs");
 var path = require("path");
 
 var APP = path.join(__dirname, "..");          // capacitor-app/
-var ROOT = path.join(APP, "..");               // 저장소 루트(웹 정본)
 var WWW = path.join(APP, "www");
 
 function fail(m) { console.error("✗ " + m); process.exit(1); }
 function ok(m) { console.log("✓ " + m); }
 
+/* 웹 정본 위치 — 순서대로 찾는다.
+   ① 환경변수 MS_WEB_ROOT  ② ../ (저장소 루트, 보통 여기)  ③ ./web/ (ASCII 작업 사본 _androidwork 에 복사해 둔 경우)
+   ④ E:\Projects\앱만들기 (이 PC 의 저장소 클론 — _androidwork 에서 빌드할 때의 기본값) */
+var CANDIDATES = [process.env.MS_WEB_ROOT, path.join(APP, ".."), path.join(APP, "web"), "E:\\Projects\\앱만들기"].filter(Boolean);
+var ROOT = null;
+for (var i = 0; i < CANDIDATES.length; i++) {
+  if (fs.existsSync(path.join(CANDIDATES[i], "index.html")) && fs.existsSync(path.join(CANDIDATES[i], "engage.js"))) { ROOT = CANDIDATES[i]; break; }
+}
+if (!ROOT) fail("웹 정본(index.html + engage.js + ping.js)을 찾지 못했습니다. 찾은 곳: " + CANDIDATES.join(" , ") +
+               "\n   → 저장소 루트에서 실행하거나, MS_WEB_ROOT=<저장소 루트> 를 지정하거나, 세 파일을 capacitor-app/web/ 에 복사하세요.");
+ok("웹 정본: " + ROOT);
 var srcHtml = path.join(ROOT, "index.html");
-if (!fs.existsSync(srcHtml)) fail("루트 index.html(웹 정본)이 없습니다: " + srcHtml);
 var html = fs.readFileSync(srcHtml, "utf8");
 
 /* 1-a) gtag 블록 제거 */
