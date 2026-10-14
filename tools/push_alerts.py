@@ -148,11 +148,13 @@ def build_brief_message(scores: dict, today_label: str) -> dict:
 
 # ─────────────────────────── FCM 발송 ───────────────────────────
 class Sender:
+    """sa_json 이 있으면 dry-run 이어도 서비스 계정으로 토큰을 받아 본다 — 비밀이 제대로 들어갔는지 dry-run 에서 바로 드러나게
+    (2026-10-14: 그 전엔 dry 면 비밀을 아예 안 읽어 '성공' 이 아무것도 증명하지 못했다)."""
     def __init__(self, sa_json: str | None, dry: bool):
         self.dry = dry or not sa_json
         self.project = None
         self.token = None
-        if not self.dry:
+        if sa_json:
             import google.auth.transport.requests  # noqa
             from google.oauth2 import service_account
             info = json.loads(sa_json)
@@ -161,6 +163,9 @@ class Sender:
                 info, scopes=["https://www.googleapis.com/auth/firebase.messaging"])
             creds.refresh(google.auth.transport.requests.Request())
             self.token = creds.token
+            print(f"✓ FCM 서비스 계정 OK — project_id={self.project}, client_email={info.get('client_email', '?')} (토큰 발급 성공)")
+        else:
+            print("⚠ FCM_SERVICE_ACCOUNT 비밀이 없음 — 실제 발송 불가, dry-run 으로만 동작")
         self.sent = 0
         self.failed = 0
 
@@ -201,7 +206,7 @@ def main():
     sa = os.environ.get("FCM_SERVICE_ACCOUNT", "").strip() or None
     sender = Sender(sa, args.dry_run)
     if sender.dry and not args.dry_run:
-        print("⚠ FCM_SERVICE_ACCOUNT 비밀이 없어 dry-run 으로 동작합니다 (Firebase 설정 전 단계).")
+        print("⚠ 비밀이 없어 dry-run 으로 동작합니다 (Firebase 설정 전 단계).")
 
     print(f"as_of={scores.get('as_of')} · now={now:%Y-%m-%d %H:%M} KST · market={args.market} · brief={args.brief}")
     markets = ["kr", "us"] if args.market == "both" else [args.market]

@@ -103,9 +103,15 @@
     var N = window.MSNative;
     if (!N || !N.InstallReferrer) { if (attempt < 5) setTimeout(function () { installReferrerOnce(attempt + 1); }, 2000); return; }
     N.InstallReferrer.get().then(function (r) {
+      var ok = !!(r && r.ok), code = (r && r.code != null) ? Number(r.code) : null;
+      /* 1 SERVICE_UNAVAILABLE · -1 SERVICE_DISCONNECTED 는 일시 장애(Play 스토어 미준비 등) → 완료 표시하지 않고
+         다음 실행 때 다시. 단 5회까지만(그 뒤엔 포기 기록). 2 FEATURE_NOT_SUPPORTED · 3 DEVELOPER_ERROR 는 영구 → 1회 기록 후 끝. */
+      var transient = !ok && (code === 1 || code === -1 || code === null);
+      var tries = 0; try { tries = Number(localStorage.getItem("ms_ref_try") || 0) + 1; localStorage.setItem("ms_ref_try", String(tries)); } catch (e) {}
+      if (transient && tries < 5) return;
       var meta = parseReferrer(r && r.referrer);
-      meta.ok = !!(r && r.ok); if (r && r.clickTs) meta.click_ts = r.clickTs; if (r && r.installTs) meta.install_ts = r.installTs;
-      if (r && !r.ok && r.code != null) meta.code = r.code;
+      meta.ok = ok; if (r && r.clickTs) meta.click_ts = r.clickTs; if (r && r.installTs) meta.install_ts = r.installTs;
+      if (!ok && code != null) meta.code = code; if (!ok) meta.tries = tries;
       event("install_referrer", meta, { channel: meta.utm_source || null });
       try { localStorage.setItem("ms_ref_done", "1"); } catch (e) {}
     }).catch(function () { /* 다음 실행 때 재시도 */ });

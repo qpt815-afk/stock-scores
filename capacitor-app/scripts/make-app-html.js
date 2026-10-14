@@ -12,6 +12,7 @@
       - <script src="engage.js"> 앞에 앱 전용 스크립트 삽입: ads.bundle.js · ads.js · native.bundle.js
    2) ../engage.js → www/engage.js (그대로)
    3) ../ping.js   → www/ping.js  (APP_VERSION 을 patch-android.js 의 VERSION_NAME 으로)
+   4) ../privacy.html · ../sw.js → www/ (그대로)
    ============================================================ */
 "use strict";
 var fs = require("fs");
@@ -81,6 +82,14 @@ var re = /(APP_VERSION\s*:\s*")[^"]*(")/;
 if (!re.test(ping)) fail("ping.js 에서 APP_VERSION 을 찾지 못했습니다");
 fs.writeFileSync(path.join(WWW, "ping.js"), ping.replace(re, "$1" + ver + "$2"));
 ok("www/ping.js 복사 + APP_VERSION = " + ver);
+
+/* 4) privacy.html · sw.js — 웹과 앱이 같은 파일을 쓴다 (2026-10-14: 세 벌로 갈라져 있던 걸 정리) */
+["privacy.html", "sw.js"].forEach(function (f) {
+  var src = path.join(ROOT, f);
+  if (!fs.existsSync(src)) { console.log("  ⚠ 루트 " + f + " 없음 — www/ 의 기존 파일 유지"); return; }
+  fs.copyFileSync(src, path.join(WWW, f));
+  ok("www/" + f + " 복사");
+});
 
 /* 확인: 앱 www 에 있어야 할 파일 */
 ["ads.js", "sw.js", "manifest.json", "privacy.html", "icon-192.png", "icon-512.png"].forEach(function (f) {
