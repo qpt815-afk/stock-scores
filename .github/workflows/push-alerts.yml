@@ -57,6 +57,14 @@ jobs:
           echo "args=$A" >> "$GITHUB_OUTPUT"
           echo "args: $A"
 
+      # Supabase 무료 프로젝트는 7일간 API 요청이 없으면 일시중지된다(2026-10-14 실제로 멈춰 있어 핑이 9월 중순부터 끊겼었음).
+      # 하루 2번 익명 키로 가벼운 요청을 보내 '활동'을 유지한다(데이터 변경 없음).
+      - name: Supabase 깨우기(일시중지 방지)
+        run: |
+          curl -s -o /dev/null -w "supabase keepalive HTTP %{http_code}\n" \
+            "https://xwyrwxnqvbgjcxqvujvs.supabase.co/rest/v1/rpc/ms_weekly" \
+            -H "apikey: sb_publishable_Z53o09xGVPaOlAVoeyNWPg_kOR26Xg3" -H "Content-Type: application/json" -d '{"stats_token":"keepalive"}' || true
+
       - name: 푸시 발송
         env:
           FCM_SERVICE_ACCOUNT: ${{ secrets.FCM_SERVICE_ACCOUNT }}
