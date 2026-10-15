@@ -1,6 +1,258 @@
 {
- "brief": {},
+ "brief": {
+  "kr": "2026-10-15"
+ },
  "last": {
+  "000150.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 55
+  },
+  "000270.KS": {
+   "date": "2026-10-15",
+   "gate": "watch",
+   "total": 53
+  },
+  "000660.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 56
+  },
+  "000810.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 44
+  },
+  "003550.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 57
+  },
+  "003670.KS": {
+   "date": "2026-10-15",
+   "gate": "watch",
+   "total": 58
+  },
+  "005380.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 43
+  },
+  "005490.KS": {
+   "date": "2026-10-15",
+   "gate": "watch",
+   "total": 59
+  },
+  "005930.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 53
+  },
+  "006405.KS": {
+   "date": "2026-10-15",
+   "gate": "risk",
+   "total": 54
+  },
+  "009155.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 56
+  },
+  "009540.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 58
+  },
+  "010120.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 55
+  },
+  "010130.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 61
+  },
+  "010140.KS": {
+   "date": "2026-10-15",
+   "gate": "watch",
+   "total": 59
+  },
+  "010950.KS": {
+   "date": "2026-10-15",
+   "gate": "watch",
+   "total": 69
+  },
+  "011200.KS": {
+   "date": "2026-10-15",
+   "gate": "watch",
+   "total": 67
+  },
+  "012330.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 54
+  },
+  "012450.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 65
+  },
+  "015760.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 43
+  },
+  "017670.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 57
+  },
+  "018260.KS": {
+   "date": "2026-10-15",
+   "gate": "watch",
+   "total": 55
+  },
+  "024110.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 48
+  },
+  "028260.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 55
+  },
+  "032830.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 48
+  },
+  "033780.KS": {
+   "date": "2026-10-15",
+   "gate": "setup",
+   "total": 77
+  },
+  "034020.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 55
+  },
+  "034730.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 55
+  },
+  "035420.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 48
+  },
+  "035720.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 60
+  },
+  "042660.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 60
+  },
+  "042700.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 58
+  },
+  "051910.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 53
+  },
+  "055550.KS": {
+   "date": "2026-10-15",
+   "gate": "exclude",
+   "total": 0
+  },
+  "066570.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 58
+  },
+  "068270.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 58
+  },
+  "086280.KS": {
+   "date": "2026-10-15",
+   "gate": "watch",
+   "total": 52
+  },
+  "086790.KS": {
+   "date": "2026-10-15",
+   "gate": "exclude",
+   "total": 0
+  },
+  "096770.KS": {
+   "date": "2026-10-15",
+   "gate": "watch",
+   "total": 64
+  },
+  "105560.KS": {
+   "date": "2026-10-15",
+   "gate": "exclude",
+   "total": 0
+  },
+  "138040.KS": {
+   "date": "2026-10-15",
+   "gate": "watch",
+   "total": 69
+  },
+  "196170.KQ": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 61
+  },
+  "207940.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 55
+  },
+  "267260.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 58
+  },
+  "272210.KS": {
+   "date": "2026-10-15",
+   "gate": "watch",
+   "total": 59
+  },
+  "298040.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 58
+  },
+  "316140.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 42
+  },
+  "329180.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 62
+  },
+  "373220.KS": {
+   "date": "2026-10-15",
+   "gate": "watch",
+   "total": 46
+  },
+  "402340.KS": {
+   "date": "2026-10-15",
+   "gate": "below",
+   "total": 60
+  },
   "AAPL": {
    "date": "2026-10-15",
    "gate": "ok",
@@ -252,5 +504,5 @@
    "total": 74
   }
  },
- "updated_at": "2026-10-15T00:29:17+09:00"
+ "updated_at": "2026-10-15T10:38:28+09:00"
 }
