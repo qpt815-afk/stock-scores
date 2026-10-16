@@ -299,9 +299,9 @@
    "total": 58
   },
   "BRK-B": {
-   "date": "2026-10-15",
-   "gate": "ok",
-   "total": 82
+   "date": "2026-10-17",
+   "gate": "below",
+   "total": 68
   },
   "CAT": {
    "date": "2026-10-15",
@@ -334,9 +334,9 @@
    "total": 0
   },
   "GE": {
-   "date": "2026-10-15",
-   "gate": "ok",
-   "total": 79
+   "date": "2026-10-17",
+   "gate": "breakout_watch",
+   "total": 83
   },
   "GEV": {
    "date": "2026-10-15",
@@ -344,14 +344,14 @@
    "total": 0
   },
   "GOOG": {
-   "date": "2026-10-15",
-   "gate": "ok",
-   "total": 79
+   "date": "2026-10-17",
+   "gate": "below",
+   "total": 58
   },
   "GS": {
-   "date": "2026-10-15",
-   "gate": "below",
-   "total": 54
+   "date": "2026-10-17",
+   "gate": "ok",
+   "total": 80
   },
   "HD": {
    "date": "2026-10-16",
@@ -359,9 +359,9 @@
    "total": 64
   },
   "INTC": {
-   "date": "2026-10-15",
-   "gate": "exclude",
-   "total": 0
+   "date": "2026-10-17",
+   "gate": "below",
+   "total": 54
   },
   "JNJ": {
    "date": "2026-10-15",
@@ -379,14 +379,14 @@
    "total": 52
   },
   "KO": {
-   "date": "2026-10-15",
-   "gate": "exclude",
-   "total": 0
+   "date": "2026-10-17",
+   "gate": "below",
+   "total": 56
   },
   "LLY": {
-   "date": "2026-10-16",
-   "gate": "exclude",
-   "total": 0
+   "date": "2026-10-17",
+   "gate": "below",
+   "total": 66
   },
   "LRCX": {
    "date": "2026-10-15",
@@ -479,14 +479,14 @@
    "total": 39
   },
   "TXN": {
-   "date": "2026-10-16",
-   "gate": "below",
-   "total": 68
+   "date": "2026-10-17",
+   "gate": "ok",
+   "total": 72
   },
   "UNH": {
-   "date": "2026-10-16",
-   "gate": "exclude",
-   "total": 0
+   "date": "2026-10-17",
+   "gate": "breakout_watch",
+   "total": 74
   },
   "V": {
    "date": "2026-10-15",
@@ -499,15 +499,15 @@
    "total": 78
   },
   "WMT": {
-   "date": "2026-10-16",
-   "gate": "exclude",
-   "total": 0
+   "date": "2026-10-17",
+   "gate": "below",
+   "total": 65
   },
   "XOM": {
-   "date": "2026-10-15",
-   "gate": "ok",
-   "total": 74
+   "date": "2026-10-17",
+   "gate": "below",
+   "total": 68
   }
  },
- "updated_at": "2026-10-16T10:34:01+09:00"
+ "updated_at": "2026-10-17T00:00:01+09:00"
 }
