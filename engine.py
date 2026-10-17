@@ -4,6 +4,28 @@
 v3.1 매수타이밍 점수 엔진 (A 추세추종 / B 바닥회복 / C 박스권·돌파대기 / EXCLUDE 검토제외)
 ─────────────────────────────────────────────────────────────
 
+[v3.1 데이터 무결성 보강 — 2026-10-05 점검 반영 · 점수 규칙·배점·게이트는 무변경]
+  · 장중 미확정 봉 차단: 거래소 세션(exchange_calendars) 마감 + SESSION_BUFFER_MIN이 지난 날까지의
+    봉만 사용(confirmed_session). 지연된 예약 실행이 장중에 돌아도 실시간가·부분 거래량을 종가로
+    커밋하지 않음 — 종목·지수·외국인 수급 모두 같은 기준. 실행 기록: data['session'].
+  · 0 이하 가격 봉 제거(2026-09-28 Yahoo O/H/L=0 봉 → 한국 전 종목 손절폭 100%·B ok→risk 사고).
+  · 52주 고저를 meta(fiftyTwoWeekHigh/Low) 대신 확정 일봉의 고가·저가로 계산 — meta는 실행 시각의
+    장중가가 섞여 같은 종가에서도 실행마다 점수·게이트가 달라졌음(결정론 위반).
+  · 펀더(op_profit_yoy) 출처 우선순위: DART → Yahoo → 직전 scores.json 값 이월(120일) → inputs.csv
+    (yoy_as_of 기준 120일). inputs.csv의 lock=1만 자동값보다 우선. 행에 op_profit_yoy·fund_source·
+    fund_as_of·fund_period 기록. (예전: CSV에 값이 있으면 Yahoo를 건너뛰어 미국 대형주 8종목이
+    6월 값에 고정 — AAPL 게이트 오판). 적자 구간 YoY는 fund_rules.py로 한·미 공통 규칙.
+  · DART 보고서 탐색을 연도마다 사업보고서 우선으로(4분기 실적 영구 누락 해소).
+  · 외국인 수급: 네이버 모바일 JSON으로 교체(기존 페이지가 SPA로 바뀌어 09-10부터 0종목이었음).
+    성공이 절반 미만이면 전 종목 중립. inputs.csv의 foreign_flow 열은 더 이상 읽지 않음(6월 수동값).
+  · 한국 유니버스 정규화: 우선주 → 보통주(009155→009150, 006405→006400 등), KT ADR 매핑,
+    미매핑 ADR·비KRX 티커 제외, 중복 제거 후 상위 N 재정렬. 랭킹 수집 실패 시 직전 유니버스 이월.
+  · 커밋 전 검증(validate_output): 행 수·지수·손절폭 이상·데이터대기 과다면 그 시장을 직전 데이터로
+    복원(data_quality=DEGRADED). 치명 이상은 health.streak로 누적 → healthcheck.py가 2회 연속이면
+    워크플로를 실패시켜 GitHub 실패 메일로 알림.
+  · 역행 가드: 타임스탬프 대신 거래소 현지 '거래일'로 비교, 새 데이터 행이 비면 역행으로 처리.
+  · 환율 조회 실패 시 직전 값 이월(fx_source=carry) — 실패하면 페널티가 0으로 튀던 문제.
+
 [v3.1 — A·B 게이트 기준을 시장별(한국/미국)로 분리 — 2026-08-30 성과 감사 반영]
   · 근거: v3.0 신호 2026-07-01~08-21 구간 백테스트(신호일 종가 진입·20거래일 보유, 진입일 중복 제거).
     - 미국 A유형(기준충족의 98%)은 나스닥 대비 -2.0%p·같은날 유니버스 대비 -1.6%p(t=-4.9)로 유의 열위.
@@ -16,6 +38,13 @@ v3.1 매수타이밍 점수 엔진 (A 추세추종 / B 바닥회복 / C 박스�
   · stop_loss_gate '과대(over)' 기준도 시장별: 한국 10%·미국 15%.
   · 검토제외(EXCLUDE)·C유형 게이트는 무변경 — 배제 필터는 두 시장 모두 유효 확인(t=-7.45/-3.71).
   · 점수 배점·필드 구조 무변경. score_version만 v3.1로 (프론트 호환 유지).
+  · 재검증(2026-10-05, backtest/ledger.py — git 이력 정본 스냅샷·20거래일·유니버스 대비):
+    - 결정 당시 알 수 있던 정보(20일 완결 신호)로 계산하면 위 근거 22항목 중 13 재현·7 부분·2 불일치
+      ('미국 B 하루 1.1종목'은 어떤 해석으로도 맞지 않음). 예: 미국 A ok 유니버스 대비 -1.50%p,
+      한국 ok 코스피 대비 +8.07%p, 미국 B 지수 대비 +6.58%p.
+    - 결정 이후 실현분은 효과가 줄었다: 미국 A 강등 행(총점 60~69) -1.08%p(CI 0 포함), 미국 B 승격 행
+      +1.85%p, 한국 ok +1.67%p. 세 변경 모두 사전등록 기준(겹치지 않는 에피소드≥30·종목≥10·거래일≥60·
+      CI 3종 모두 0 제외·전후반 부호 일치) 미달 → 파라미터 현행 유지·관찰 지속. 판정 갱신은 이 스크립트로.
 
 [v3.0 — NONE을 C(관찰후보)와 EXCLUDE(검토제외)로 분리]
   · 분류 4분기: A·B는 v2.9와 동일, 기존 NONE 중 '박스권 수렴·돌파대기' 조건을 만족하면 C로 승격,
@@ -63,19 +92,93 @@ v3.1 매수타이밍 점수 엔진 (A 추세추종 / B 바닥회복 / C 박스�
   환율 페널티(-12/-6/0), 이격도 과열 게이트, 60점 투자가능 컷오프.
 
 [유일한 외부 입력 — inputs.csv]
-  op_profit_yoy : 최근 4분기 영업이익 YoY(%)  ← 펀더멘털 점수의 입력 (분기 공시 주기, 매일 안 변함)
-                   · 한국은 DART OpenAPI로 자동화(무료 키), 미국은 us_earnings.py로 자동화(키 불필요)
-                   · 한국에서 DART가 못 채운 종목(ADR·우선주·일부 금융주)도 us_earnings.py(야후)로 폴백
-                   · 자동 수집 실패 시 CSV 값으로 폴백
-  foreign_flow  : sell / neutral / buy        ← 시장위험 가감 (수급, 기본 neutral)
+  op_profit_yoy : 영업이익 YoY(%) — 최근 공시 보고서의 당기 vs 전기 동기(단일 기간 비교, TTM 아님)
+                   ← 펀더멘털 점수의 입력 (분기 공시 주기, 매일 안 변함)
+                   · 한국 DART(사업보고서 우선) → Yahoo 분기(전년 동분기) → 직전값 이월 → CSV 순
+                   · CSV 값은 yoy_as_of 기준 CSV_YOY_MAX_AGE_DAYS가 지나면 무시, lock=1이면 최우선
+  (foreign_flow 열은 폐기 — 수급은 foreign_flow.py 자동 수집 전용, 실패 시 neutral)
   high_vol, defensive, import_heavy, bonus    ← 선택 플래그 (기본 0)
   값 없으면 시장위험은 중립(기본 12/9)으로, op_profit_yoy 없으면 total=null.
 
 휴장일: holidays 라이브러리로 한국(KRX)·미국(NYSE) 휴장을 감지해 안내 문구를 scores.json에 넣음.
 데이터 소스(키 불필요): 랭킹=companiesmarketcap, 시세·일봉·52주=Yahoo chart API,
-                         영업이익=Yahoo fundamentals-timeseries API
+                         영업이익=Yahoo fundamentals-timeseries API, 외국인 수급=네이버 증권 모바일
 """
-import requests, json, time, os, csv, datetime
+import requests, json, time, os, csv, datetime, re
+
+# ── 장중(미확정) 봉 판정 ─────────────────────────────────────
+# 세션 마감 후 이 시간이 지나야 그날 봉을 '확정'으로 본다(Yahoo 종가 반영 지연 대비).
+# 05:47 KST 실행(20:47 UTC)은 서머타임 중 미국 마감 47분 뒤라 통과, 11월 겨울시간엔 마감 전이라
+# 미국 당일 봉을 쓰지 않고 다음 실행(19:13 KST)에서 반영된다 — 의도된 동작.
+SESSION_BUFFER_MIN = 20
+MARKET_CAL = {"kr": "XKRX", "us": "XNYS"}
+MARKET_TZ = {"kr": "Asia/Seoul", "us": "America/New_York"}
+CONFIRMED = {}               # 시장별 마지막 확정 세션 날짜(datetime.date) — main()에서 채움
+CSV_YOY_MAX_AGE_DAYS = 120   # inputs.csv 영업이익 YoY 폴백의 유효기간
+INPUT_ISSUES = []            # load_inputs가 발견한 inputs.csv 문제(헬스 치명 사유로 올림)
+CARRY_YOY_MAX_AGE_DAYS = 120 # 직전 scores.json에서 이월하는 YoY의 유효기간
+KST = datetime.timezone(datetime.timedelta(hours=9))
+
+def _tz(market):
+    from zoneinfo import ZoneInfo
+    return ZoneInfo(MARKET_TZ[market])
+
+def _today_kst():
+    return datetime.datetime.now(KST).date()
+
+def _age_days(iso, today):
+    """'YYYY-MM-DD' → today까지 경과일. 파싱 불가면 None."""
+    try:
+        return (today - datetime.date.fromisoformat(str(iso)[:10])).days
+    except Exception:
+        return None
+
+def confirmed_session(market, now=None):
+    """시장의 '마지막 확정 세션' 날짜(거래소 현지 날짜)와 장중 여부.
+    세션 마감 + SESSION_BUFFER_MIN이 지난 가장 최근 세션만 확정으로 본다.
+    returns (date|None, intraday). 판정 실패 시 (None, False) — 이때는 봉을 자르지 않음(종전 동작)."""
+    try:
+        import exchange_calendars as xc, pandas as pd
+        cal = xc.get_calendar(MARKET_CAL[market])
+        now = now if now is not None else pd.Timestamp.now(tz="UTC")
+        base = now.tz_convert(None).normalize()
+        buf = pd.Timedelta(minutes=SESSION_BUFFER_MIN)
+        sessions = cal.sessions_in_range(base - pd.Timedelta(days=20), base + pd.Timedelta(days=1))
+        intraday = False
+        for s in reversed(sessions):
+            if cal.session_close(s) + buf <= now:
+                return s.date(), intraday
+            if cal.session_open(s) <= now:
+                intraday = True        # 진행 중이거나 마감 직후 버퍼 안
+        return None, intraday
+    except Exception as e:
+        print(f"::warning::{market} 세션 판정 실패 — 장중 봉 차단 생략: {e}")
+        return None, False
+
+def _at(arr, i):
+    return arr[i] if arr is not None and i < len(arr) else None
+
+def _bars(res, market):
+    """Yahoo chart 결과 → 확정 일봉 [(ts, o, h, l, c, v)].
+    · close가 없거나 0 이하인 봉 제거
+    · o/h/l 중 0 이하가 있으면 그 봉의 OHLC는 버리고 close만 사용(손절폭·박스 계산 오염 방지)
+    · CONFIRMED[market]보다 뒤 날짜(장중 미확정)의 봉 제거"""
+    q = res["indicators"]["quote"][0]
+    ts = res.get("timestamp") or []
+    cut = CONFIRMED.get(market)
+    tz = _tz(market) if cut else None
+    out = []
+    for i, t in enumerate(ts):
+        c = _at(q.get("close"), i)
+        if c is None or c <= 0:
+            continue
+        if cut and datetime.datetime.fromtimestamp(t, tz).date() > cut:
+            continue
+        o, h, l = (_at(q.get(k), i) for k in ("open", "high", "low"))
+        if any(x is not None and x <= 0 for x in (o, h, l)):
+            o = h = l = None
+        out.append((t, o, h, l, c, _at(q.get("volume"), i)))
+    return out
 
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
 YF = "https://query1.finance.yahoo.com/v8/finance/chart/{sym}?range=1y&interval=1d"
@@ -155,7 +258,18 @@ KR_ADR = {
     "PKX": "005490.KS",  # POSCO홀딩스
     "WF": "316140.KS",   # 우리금융지주
     "SKM": "017670.KS",  # SK텔레콤
+    "KT": "030200.KS",   # KT (2026-07-29~31 USD 가격으로 한국 행에 섞였던 사례)
+    "LPL": "034220.KS",  # LG디스플레이
 }
+
+# 우선주 → 보통주. 시총 랭킹 사이트가 보통주 대신 우선주 코드를 주는 경우가 있음
+# (삼성전기우·삼성SDI우가 수개월간 보통주 대신 유니버스에 있었음 — 거래대금 수십~수백 분의 1).
+# 표에 없는 코드도 6번째 자리 5/7/9(우·우B·우C) 규칙으로 보통주(0)로 치환한다.
+PREF_TO_COMMON = {"009155.KS": "009150.KS", "006405.KS": "006400.KS", "005935.KS": "005930.KS",
+                  "005385.KS": "005380.KS", "051915.KS": "051910.KS", "066575.KS": "066570.KS",
+                  "003555.KS": "003550.KS"}
+_KRX_RE = re.compile(r"^[0-9A-Z]{6}\.(KS|KQ)$")
+_PREF_RE = re.compile(r"^\d{5}[579]\.(KS|KQ)$")
 
 # ── 휴장일 감지 ──────────────────────────────────────────────
 def holiday_status():
@@ -196,38 +310,75 @@ def notices(kr_c, kr_n, us_c, us_n):
     return s, "   ".join(full)
 
 # ── 데이터 수집 ──────────────────────────────────────────────
-def fetch_ranking(market, top=30):
+def fetch_ranking(market, top=30, retries=3):
+    """시총 랭킹 상위 top. HTTP 오류·Cloudflare 챌린지·빈 표는 재시도, 끝내 실패하면 [] (main이 이월 처리)."""
     from bs4 import BeautifulSoup
-    soup = BeautifulSoup(requests.get(CMC[market], headers=UA, timeout=25).text, "html.parser")
-    out = []
-    for tr in soup.select("table tbody tr"):
-        nm, code = tr.select_one(".company-name"), tr.select_one(".company-code")
-        if nm and code:
-            out.append({"rank": len(out)+1, "name": nm.text.strip(), "ticker": code.text.strip()})
-        if len(out) >= top: break
+    last = None
+    for i in range(retries):
+        try:
+            r = requests.get(CMC[market], headers=UA, timeout=25)
+            r.raise_for_status()
+            if "cf-chl" in r.text or "Just a moment" in r.text[:3000]:
+                raise RuntimeError("Cloudflare 챌린지 페이지")
+            soup = BeautifulSoup(r.text, "html.parser")
+            out = []
+            for tr in soup.select("table tbody tr"):
+                nm, code = tr.select_one(".company-name"), tr.select_one(".company-code")
+                if nm and code:
+                    out.append({"rank": len(out)+1, "name": nm.text.strip(), "ticker": code.text.strip()})
+                if len(out) >= top: break
+            if out:
+                return out
+            last = RuntimeError("랭킹 표 0행")
+        except Exception as e:
+            last = e
+        time.sleep(3 * (i + 1))
+    print(f"::warning::{market} 랭킹 수집 실패({retries}회): {last}")
+    return []
+
+def normalize_kr(stocks, top):
+    """한국 랭킹 정규화: ADR → KRX 티커, 우선주 → 보통주, 비KRX 티커 제외, 중복 제거, 상위 top 재정렬."""
+    out, seen = [], set()
+    for s in stocks:
+        t = KR_ADR.get(s["ticker"], s["ticker"])
+        t = PREF_TO_COMMON.get(t, t)
+        if _PREF_RE.match(t):
+            t = t[:5] + "0" + t[6:]
+        if not _KRX_RE.match(t):
+            print(f"::warning::한국 랭킹의 비KRX 티커 제외: {s['ticker']} ({s.get('name')})")
+            continue
+        if t in seen:
+            continue
+        if t != s["ticker"]:
+            print(f"  · 티커 정규화 {s['ticker']} → {t}")
+        seen.add(t)
+        out.append({**s, "ticker": t})
+    out = out[:top]
+    for i, s in enumerate(out):
+        s["rank"] = i + 1
     return out
 
-def fetch_history(sym, candle_days=120):
+def fetch_history(sym, market, candle_days=120):
     res = requests.get(YF.format(sym=sym), headers=UA, timeout=20).json()["chart"]["result"][0]
-    q = res["indicators"]["quote"][0]
-    # close와 timestamp는 반드시 쌍으로 거른다. null 봉만 버리고 시각은 원본 마지막을 쓰면
-    # "가격은 전일·시각은 당일"로 어긋나 역행 가드가 무력해진다(한국장 아침 실행에서 실제 발생).
-    pairs = [(t, c) for t, c in zip(res.get("timestamp") or [], q["close"]) if c is not None]
-    closes = [c for _, c in pairs]
-    vols = [v for v in q.get("volume", []) if v is not None]
+    # 확정 일봉만 사용(_bars): close·timestamp를 쌍으로 거르고(가격은 전일·시각은 당일 어긋남 방지),
+    # 0 이하 가격 봉과 장중 미확정 봉을 제거한다.
+    bars = _bars(res, market)
+    closes = [b[4] for b in bars]
     if len(closes) < 21: return None
+    vols = [b[5] for b in bars if b[5] is not None]
     meta = res.get("meta", {})
     ma = lambda n: sum(closes[-n:])/n
     # 캔들차트용 OHLC (시·고·저·종 모두 있는 날만, 최근 candle_days개)
-    o, hi, lo, cl = q.get("open", []), q.get("high", []), q.get("low", []), q["close"]
-    ohlc = []
-    for i in range(len(cl)):
-        oo = o[i] if i < len(o) else None
-        hh = hi[i] if i < len(hi) else None
-        ll = lo[i] if i < len(lo) else None
-        cc = cl[i]
-        if None in (oo, hh, ll, cc): continue
-        ohlc.append([round(oo, 2), round(hh, 2), round(ll, 2), round(cc, 2)])
+    ohlc = [[round(b[1], 2), round(b[2], 2), round(b[3], 2), round(b[4], 2)]
+            for b in bars if None not in (b[1], b[2], b[3])]
+    # 52주 고저: 확정 일봉의 고가·저가로 직접 계산. meta(fiftyTwoWeekHigh/Low)는 '실행 시각'부터 거꾸로
+    # 52주를 세고 장중가도 섞여, 같은 종가인데 실행 요일·시각마다 값(→ B 분류·점수)이 달라졌다.
+    # 창은 마지막 확정 봉 기준 정확히 52주(364일, 경계일 제외)로 고정 → 결정론.
+    cutoff = bars[-1][0] - 364 * 86400
+    yr = [b for b in bars if b[0] > cutoff]
+    highs = [b[2] for b in yr if b[2] is not None] or [b[4] for b in yr]
+    lows = [b[3] for b in yr if b[3] is not None] or [b[4] for b in yr]
+    last_vol = bars[-1][5] if bars[-1][5] is not None else (vols[-1] if vols else None)
     return {
         "close": closes[-1], "prev": closes[-2],
         "chg_pct": (closes[-1]-closes[-2])/closes[-2]*100,
@@ -235,28 +386,107 @@ def fetch_history(sym, candle_days=120):
         "ma5": ma(5),
         "ma5_prev": sum(closes[-6:-1])/5 if len(closes) >= 6 else None,
         "ret5": (closes[-1]-closes[-6])/closes[-6]*100 if len(closes) >= 6 else None,
-        "hi52": meta.get("fiftyTwoWeekHigh") or max(closes),
-        "lo52": meta.get("fiftyTwoWeekLow") or min(closes),
-        "vol": vols[-1] if vols else None,
+        "hi52": max(max(highs), closes[-1]),
+        "lo52": min(min(lows), closes[-1]),
+        "vol": last_vol,
         "avg_vol5": (sum(vols[-5:])/5) if len(vols) >= 5 else None,
         "avg_vol20": (sum(vols[-20:])/20) if len(vols) >= 20 else None,
         "ohlc": ohlc[-candle_days:],
         "yahoo_name": (meta.get("shortName") or "").strip(),
-        "last_ts": pairs[-1][0],   # 마지막 '확정' 캔들 시각(역행 방지 가드용)
+        "last_ts": bars[-1][0],    # 마지막 '확정' 캔들 시각(역행 방지 가드용)
     }
 
-def fetch_fx():
-    try:
-        return requests.get(YF.format(sym="KRW=X"), headers=UA, timeout=15).json()["chart"]["result"][0]["meta"]["regularMarketPrice"]
-    except Exception:
-        return None
+def fetch_fx(old=None):
+    """원/달러 환율. returns (fx, source). 조회 실패 시 직전 scores.json 값을 이월(source='carry') —
+    예전엔 None이 되어 미국 환율 페널티가 0으로 튀었다."""
+    for i in range(2):
+        try:
+            v = requests.get(YF.format(sym="KRW=X"), headers=UA, timeout=15).json()["chart"]["result"][0]["meta"]["regularMarketPrice"]
+            if v and v > 0:
+                return v, "live"
+        except Exception as e:
+            print(f"  ! 환율 조회 실패({i+1}): {e}")
+        time.sleep(2)
+    prev = (old or {}).get("fx_usdkrw")
+    if prev:
+        print(f"::warning::환율 조회 실패 — 직전 값 {prev} 이월")
+        return prev, "carry"
+    return None, "none"
 
-def load_inputs(path="inputs.csv"):
+def load_inputs(path="inputs.csv", today=None):
+    """inputs.csv(수동 폴백·플래그).
+    · op_profit_yoy: 자동 수집(DART·Yahoo)과 직전값 이월이 모두 실패했을 때만 쓰는 최후 폴백.
+      yoy_as_of 기준 CSV_YOY_MAX_AGE_DAYS가 지났거나 기준일이 없으면 버린다.
+      lock=1이면 fund_source='lock'으로 자동 수집보다 우선(정말 고정해야 할 종목만).
+    · foreign_flow 열은 읽지 않는다(수급은 자동 수집 전용, 실패 시 neutral).
+    · high_vol·defensive·import_heavy·bonus 플래그는 그대로 사용."""
     d = {}
-    if os.path.exists(path):
-        for r in csv.DictReader(open(path, encoding="utf-8")):
-            d[r["ticker"].strip()] = r
+    if not os.path.exists(path):
+        return d
+    today = today or _today_kst()
+    # utf-8-sig: Excel 'CSV UTF-8'·PowerShell 5.1 Set-Content가 붙이는 BOM이 있어도 헤더를 읽는다
+    # (BOM이 있으면 첫 열 이름이 '\ufeffticker'가 되어 모든 행이 조용히 버려졌음)
+    lines = [ln for ln in open(path, encoding="utf-8-sig").read().splitlines() if ln.strip()]
+    for r in csv.DictReader(lines):
+        t = (r.get("ticker") or "").strip()
+        if not t:
+            continue
+        row = {k.strip(): (v.strip() if isinstance(v, str) else v) for k, v in r.items() if k}
+        row.pop("foreign_flow", None)
+        if row.get("op_profit_yoy") not in (None, "", "NA"):
+            asof = row.get("yoy_as_of") or ""
+            age = _age_days(asof, today)
+            if row.get("lock") in ("1", "true", "True"):
+                row.update({"fund_source": "lock", "fund_as_of": asof or None, "fund_period": "수동 고정"})
+            elif age is not None and age <= CSV_YOY_MAX_AGE_DAYS:
+                row.update({"fund_source": "csv", "fund_as_of": asof, "fund_period": "수동 입력"})
+            else:
+                row["op_profit_yoy"] = ""          # 기한 지난(또는 기준일 없는) 수동값 폐기
+        d[t] = row
+    if len(lines) > 1 and not d:
+        msg = "inputs.csv를 읽었지만 0행 — 헤더(ticker 열)·인코딩 확인 필요"
+        print(f"::warning::{msg}")
+        INPUT_ISSUES.append(msg)
     return d
+
+def _fund_origin(r):
+    """행의 펀더 값이 원래 어디서 왔나(dart/yahoo). 이월값은 fund_origin에 원출처를 보존한다."""
+    src = (r or {}).get("fund_source")
+    if src in ("dart", "yahoo"):
+        return src
+    if src == "carry":
+        return (r or {}).get("fund_origin")
+    return None
+
+def carry_fundamentals(stocks, inp, old_rows, today=None, origins=("dart", "yahoo")):
+    """자동 수집이 실패한 종목에 직전 scores.json의 자동 수집값을 이월(CARRY_YOY_MAX_AGE_DAYS 이내).
+    origins: 이월할 원출처. 한국은 DART 직후 origins=('dart',)로 먼저 불러, DART가 일시 실패해도
+    정의가 다른 Yahoo 값으로 갈아타지 않게 한다(실행마다 펀더·게이트가 깜빡이던 문제).
+    fund_as_of는 원래 수집일을 유지하므로 이월이 유효기간을 넘어 연장되지 않는다.
+    CSV 수동값이 이월값보다 최근이면 CSV를 유지한다. 반환: 이월한 종목 수."""
+    today = today or _today_kst()
+    prev = {r.get("ticker"): r for r in (old_rows or []) if isinstance(r, dict)}
+    n = 0
+    for s in stocks:
+        t = s["ticker"]
+        cur = inp.get(t, {})
+        if cur.get("fund_source") in ("dart", "yahoo", "lock", "carry"):
+            continue
+        o = prev.get(t) or {}
+        origin = _fund_origin(o)
+        if o.get("op_profit_yoy") is None or origin not in origins:
+            continue
+        age = _age_days(o.get("fund_as_of"), today)
+        if age is None or age > CARRY_YOY_MAX_AGE_DAYS:
+            continue
+        if cur.get("fund_source") == "csv" and str(cur.get("fund_as_of") or "") >= str(o.get("fund_as_of") or ""):
+            continue                               # CSV가 더 최근이면 CSV 유지
+        cur = dict(cur)
+        cur.update({"ticker": t, "op_profit_yoy": o["op_profit_yoy"], "fund_source": "carry",
+                    "fund_origin": origin, "fund_as_of": o.get("fund_as_of"), "fund_period": o.get("fund_period")})
+        inp[t] = cur
+        n += 1
+    return n
 
 # ════════════════════════════════════════════════════════════════
 # v2.9 점수 규칙 — A(추세추종) / B(바닥회복) / NONE(검토제외) + 보수적 게이트
@@ -428,28 +658,48 @@ def stop_loss_gate(slp, market="kr"):
     if slp <= cap: return "warn", f"손절폭 {slp}% (경고)"
     return "over", f"손절폭 {slp}% ({cap}% 초과 — 과대)"
 
-def _index_closes(res):
-    """지수 종가 시리즈. 장 마감 직후 마지막 일봉 close가 아직 null(미확정)이면
-    meta.regularMarketPrice(당일 확정 종가)를 최신 종가로 덧붙여 최신 거래일을 반영한다.
-    (개별종목 fetch_history·환율 fetch_fx는 이미 meta 현재가를 쓰지만, 지수는 일봉 close만
-     써서 장 마감 직후 지수값이 전일에 멈추던 버그를 보정.) returns (closes, 폴백적용여부)."""
-    raw = res["indicators"]["quote"][0]["close"]
-    closes = [c for c in raw if c is not None]
+def _index_series(res, market):
+    """지수 확정 봉 [(ts, o, h, l, c, v)]와 폴백 적용 여부.
+    장 마감 직후 마지막 일봉 close가 아직 null(미확정 표기)이면 meta.regularMarketPrice를 그 세션의
+    종가로 덧붙인다(지수값이 전일에 멈추던 버그 보정). 단, 그 세션이 '확정'(CONFIRMED)일 때만 —
+    장중에는 실시간 지수를 종가로 붙이지 않는다. 날짜 비교는 거래소 현지 시간대 기준
+    (예전엔 KST 고정이라 미국 지수에서 전일 종가가 새 거래일로 복제되기도 했음)."""
+    bars = _bars(res, market)
     meta = res.get("meta", {})
     rmp, rmt = meta.get("regularMarketPrice"), meta.get("regularMarketTime")
-    ts = res.get("timestamp") or []
-    if closes and raw and raw[-1] is None and rmp and rmt and ts:
-        tz = datetime.timezone(datetime.timedelta(hours=9))
-        last_valid = max(i for i, c in enumerate(raw) if c is not None)
-        if datetime.datetime.fromtimestamp(rmt, tz).date() > datetime.datetime.fromtimestamp(ts[last_valid], tz).date():
-            return closes + [rmp], True   # 미확정 봉의 실제 종가로 최신값 보정
-    return closes, False
+    if not (bars and rmp and rmp > 0 and rmt):
+        return bars, False
+    tz = _tz(market)
+    rd = datetime.datetime.fromtimestamp(rmt, tz).date()
+    ld = datetime.datetime.fromtimestamp(bars[-1][0], tz).date()
+    cut = CONFIRMED.get(market)
+    if cut is not None:
+        ok = ld < rd <= cut
+    else:   # 세션 판정 실패 시 종전 조건(마지막 원본 봉이 null)으로만 보정
+        raw = res["indicators"]["quote"][0]["close"]
+        ok = bool(raw) and raw[-1] is None and rd > ld
+    if ok:
+        return bars + [(rmt, None, None, None, rmp, None)], True
+    return bars, False
 
-def index_trend(sym):
+def _yf_chart(sym, tries=3, timeout=20):
+    """Yahoo chart 결과(result[0]). 일시 오류(429·타임아웃 등)는 백오프 재시도 — 지수처럼
+    한 번의 실패가 시장 전체 판정에 영향을 주는 요청에 사용."""
+    last = None
+    for i in range(tries):
+        try:
+            return requests.get(YF.format(sym=sym), headers=UA, timeout=timeout).json()["chart"]["result"][0]
+        except Exception as e:
+            last = e
+            time.sleep(2 * (i + 1))
+    raise last
+
+def index_trend(sym, market):
     # v2.9: 시장지수 추세. 20일선 위/아래 + 20일선 기울기로 점수(0~15)·약세 게이트 산출.
     try:
-        res = requests.get(YF.format(sym=sym), headers=UA, timeout=20).json()["chart"]["result"][0]
-        cl, _ = _index_closes(res)   # 장 마감 직후 미확정 일봉이면 meta 현재가로 폴백
+        res = _yf_chart(sym)
+        bars, _ = _index_series(res, market)   # 확정 봉 + 마감 직후 미확정 일봉 폴백
+        cl = [b[4] for b in bars]
         if len(cl) < 25: return None
         ma20 = sum(cl[-20:]) / 20
         ma20_prev = sum(cl[-25:-5]) / 20
@@ -654,7 +904,7 @@ def final_gate_v3(typ3, total, h, m, rec, slp, mkt_weak, up, disp, market="kr"):
 
 # ── 한 종목 ─────────────────────────────────────────────────
 def build_row(stock, market, fx, inp, candles=None, mkt=None):
-    h = fetch_history(stock["ticker"])
+    h = fetch_history(stock["ticker"], market)
     if not h: return None
     if candles is not None and h.get("ohlc"):
         candles[stock["ticker"]] = h["ohlc"]
@@ -749,6 +999,14 @@ def build_row(stock, market, fx, inp, candles=None, mkt=None):
         "ma20": round(h["ma20"], 1), "ma60": round(h["ma60"], 1) if h["ma60"] else None,
         "hi52": round(h["hi52"], 2), "lo52": round(h["lo52"], 2),
         "disparity": round(disp, 1), "fx_penalty": fxp,
+        # 입력 출처(감사·재현용): 펀더 원값·출처(dart/yahoo/carry/csv/lock)·수집일·보고 기간, 수급 판정
+        "op_profit_yoy": yoy,
+        "fund_source": c.get("fund_source") if yoy is not None else None,
+        "fund_origin": (c.get("fund_origin") or (c.get("fund_source") if c.get("fund_source") in ("dart", "yahoo") else None))
+                       if yoy is not None else None,
+        "fund_as_of": c.get("fund_as_of") if yoy is not None else None,
+        "fund_period": c.get("fund_period") if yoy is not None else None,
+        "foreign_flow": flow if market == "kr" else None,
         **comp,
         "total": round(total) if total is not None else None,
         "gate": LEGACY_GATE_V3.get(code, "below"),   # 기존 프론트 호환(ok/below/hot/pending)
@@ -799,22 +1057,14 @@ INDICES = {
     "us": [("S&P 500", "^GSPC"), ("나스닥", "^IXIC")],
 }
 
-def fetch_index(sym, candle_days=120):
+def fetch_index(sym, market, candle_days=120):
     try:
-        j = requests.get(YF.format(sym=sym), headers=UA, timeout=20).json()
-        res = j["chart"]["result"][0]
-        q = res["indicators"]["quote"][0]
-        cl, pended = _index_closes(res)   # 장 마감 직후 미확정 일봉이면 meta 현재가로 폴백
+        res = _yf_chart(sym)
+        bars, pended = _index_series(res, market)   # 확정 봉 + 마감 직후 미확정 일봉 폴백
+        cl = [b[4] for b in bars]
         if len(cl) < 2: return None
-        o, hi, lo, c2 = q.get("open", []), q.get("high", []), q.get("low", []), q["close"]
-        ohlc = []
-        for i in range(len(c2)):
-            oo = o[i] if i < len(o) else None
-            hh = hi[i] if i < len(hi) else None
-            ll = lo[i] if i < len(lo) else None
-            cc = c2[i]
-            if None in (oo, hh, ll, cc): continue
-            ohlc.append([round(oo, 2), round(hh, 2), round(ll, 2), round(cc, 2)])
+        ohlc = [[round(b[1], 2), round(b[2], 2), round(b[3], 2), round(b[4], 2)]
+                for b in bars if None not in (b[1], b[2], b[3])]
         # 폴백으로 당일 종가를 덧붙인 경우, 일봉 OHLC(고·저)가 비어 있으므로 전일종가~현재가로 캔들 합성
         if pended and ohlc:
             prevc, last = cl[-2], cl[-1]
@@ -826,7 +1076,7 @@ def fetch_index(sym, candle_days=120):
 def market_brief(rows, market, idx_candles=None):
     idx = []
     for name, sym in INDICES.get(market, []):
-        d = fetch_index(sym)
+        d = fetch_index(sym, market)
         if d:
             idx.append({"name": name, "val": d["val"], "chg": d["chg"]})
             if idx_candles is not None and d.get("ohlc"):
@@ -843,8 +1093,9 @@ def market_brief(rows, market, idx_candles=None):
 # 실제 사례: 2026-08-01 05:57 KST 실행이 7/31(금) 코스피 사상최대 폭등장을 지우고
 #            목요일 데이터로 커밋 → 06:52 실행이 우연히 복구.
 # 그대로 커밋하면 앱 데이터가 하루 전으로 '역행'하므로, 시장(kr/us)별로 새 데이터의
-# 마지막 캔들 시각(last_ts)이 기존 scores.json보다 과거면 그 시장만 기존 데이터를 유지한다.
-# (기존 파일에 last_ts가 없는 구버전이면 비교 불가 → 가드 없이 통과, 다음 실행부터 보호)
+# 마지막 거래일이 기존 scores.json보다 과거면 그 시장만 기존 데이터를 유지한다.
+# 비교는 타임스탬프가 아니라 거래소 현지 '거래일'로 한다 — 같은 거래일인데 봉 시각만 다른
+# 경우(00:00 UTC vs 15:30 KST)를 역행으로 오판해 오염 데이터를 16시간 유지한 사례(2026-09-28).
 _GUARD = {
     "kr": {"is_mine": lambda t: t.endswith((".KS", ".KQ")), "indices": ("코스피", "코스닥"), "label": "한국"},
     "us": {"is_mine": lambda t: not t.endswith((".KS", ".KQ")), "indices": ("S&P 500", "나스닥"), "label": "미국"},
@@ -854,51 +1105,191 @@ def _last_ts(rows):
     ts = [r.get("last_ts") for r in (rows or []) if isinstance(r, dict) and r.get("last_ts")]
     return max(ts) if ts else None
 
-def apply_regression_guard(data, candles_data, scores_path="scores.json", candles_path="candles.json"):
+def _trade_date(ts, mk):
+    return datetime.datetime.fromtimestamp(ts, _tz(mk)).date() if ts else None
+
+def _load_json(path):
     try:
-        old = json.load(open(scores_path, encoding="utf-8"))
+        return json.load(open(path, encoding="utf-8"))
     except Exception:
+        return None
+
+def _restore_market(data, candles_data, old, old_candles, mk):
+    """한 시장(kr/us)의 행·시황·지수추세·캔들을 직전 파일 값으로 되돌린다."""
+    g = _GUARD[mk]
+    data[mk] = (old or {}).get(mk) or []
+    for sect in ("market", "market_trend"):
+        if isinstance((old or {}).get(sect), dict) and old[sect].get(mk) is not None:
+            data.setdefault(sect, {})[mk] = old[sect][mk]
+    stocks = candles_data.setdefault("stocks", {})
+    for t in [t for t in stocks if g["is_mine"](t)]:
+        del stocks[t]
+    for t, arr in ((old_candles or {}).get("stocks") or {}).items():
+        if g["is_mine"](t):
+            stocks[t] = arr
+    for nm in g["indices"]:
+        if ((old_candles or {}).get("indices") or {}).get(nm):
+            candles_data.setdefault("indices", {})[nm] = old_candles["indices"][nm]
+
+def apply_regression_guard(data, candles_data, old, old_candles):
+    if not old:
         return data, candles_data              # 기존 파일 없음/손상 → 그대로 진행
-    try:
-        old_candles = json.load(open(candles_path, encoding="utf-8"))
-    except Exception:
-        old_candles = {}
-    fmt = lambda t: datetime.datetime.fromtimestamp(t, datetime.timezone.utc).strftime("%Y-%m-%d")
+    fmt = lambda d: d.isoformat() if d else "없음"
     for mk, g in _GUARD.items():
-        new_ts, old_ts = _last_ts(data.get(mk)), _last_ts(old.get(mk))
-        if not new_ts or not old_ts or new_ts >= old_ts:
+        old_d = _trade_date(_last_ts(old.get(mk)), mk)
+        new_d = _trade_date(_last_ts(data.get(mk)), mk)
+        if not old_d or (new_d and new_d >= old_d):
             continue                           # 비교 불가(구버전 파일 등)거나 정상 → 통과
-        print(f"⚠️ 역행 감지({g['label']}): 새 데이터 마지막 거래일 {fmt(new_ts)} < 기존 {fmt(old_ts)}"
-              f" — 야후 지연 응답으로 판단, 기존 {g['label']} 데이터 유지")
-        data[mk] = old[mk]                     # 행 전체 유지(옛 시세로 계산된 점수 커밋 방지)
-        for sect in ("market", "market_trend"):
-            if isinstance(old.get(sect), dict) and old[sect].get(mk):
-                data.setdefault(sect, {})[mk] = old[sect][mk]
-        data.setdefault("stale_guard", {})[mk] = f"{fmt(old_ts)} 데이터 유지(야후가 {fmt(new_ts)}까지만 반환)"
-        for t, arr in (old_candles.get("stocks") or {}).items():
-            if g["is_mine"](t):
-                candles_data["stocks"][t] = arr
-        for nm in g["indices"]:
-            if (old_candles.get("indices") or {}).get(nm):
-                candles_data["indices"][nm] = old_candles["indices"][nm]
+        print(f"⚠️ 역행 감지({g['label']}): 새 데이터 마지막 거래일 {fmt(new_d)} < 기존 {fmt(old_d)}"
+              f" — 기존 {g['label']} 데이터 유지")
+        _restore_market(data, candles_data, old, old_candles, mk)
+        data.setdefault("stale_guard", {})[mk] = f"{fmt(old_d)} 데이터 유지(새 수집은 {fmt(new_d)}까지만 반환)"
     return data, candles_data
+
+# ── 커밋 전 출력 검증 + 헬스 ──────────────────────────────────
+# 하드 이상(그대로 내보내면 사용자에게 틀린 라벨이 나가는 상태) → 그 시장을 직전 데이터로 복원.
+# 치명 이상(하드 + 수집 실패 + 데이터 지연)은 health.streak로 실행마다 누적 → healthcheck.py가
+# 2회 연속이면 워크플로를 실패시켜 GitHub 실패 메일로 알린다. (예전엔 수급 0종목·0값 봉·US 49행이 모두 무음)
+# 수집 상태는 역행 가드·복원 '이전'의 새 수집 결과(fresh)로 판정한다 — 그렇지 않으면 시세가 전부
+# 실패해 가드가 직전 행을 되살린 경우가 오히려 정상으로 보인다.
+def fresh_summary(data, top):
+    out = {}
+    for mk in ("kr", "us"):
+        rows = data.get(mk) or []
+        out[mk] = {"n": len(rows),
+                   "auto": sum(1 for r in rows if r.get("fund_source") in ("dart", "yahoo")),
+                   "trade_date": _trade_date(_last_ts(rows), mk)}
+    return out
+
+def _sessions_behind(mk, d_out, d_conf):
+    """출력 데이터 거래일이 마지막 확정 세션보다 몇 세션 뒤처졌나. 판정 불가면 None."""
+    if not d_out or not d_conf or d_out >= d_conf:
+        return 0 if (d_out and d_conf) else None
+    try:
+        import exchange_calendars as xc, pandas as pd
+        cal = xc.get_calendar(MARKET_CAL[mk])
+        return len(cal.sessions_in_range(pd.Timestamp(d_out), pd.Timestamp(d_conf))) - 1
+    except Exception:
+        return None
+
+def _repair_indices(data, candles_data, old, old_candles, mk):
+    """표시용 지수 카드가 일부 빠졌으면 빠진 지수만 직전 값으로 채운다(점수는 건드리지 않음)."""
+    want = _GUARD[mk]["indices"]
+    mb = (data.setdefault("market", {}).get(mk)) or {}
+    have = {i.get("name"): i for i in (mb.get("indices") or [])}
+    olds = {i.get("name"): i for i in ((((old or {}).get("market") or {}).get(mk) or {}).get("indices") or [])}
+    missing = [nm for nm in want if nm not in have]
+    if not missing:
+        return []
+    for nm in missing:
+        if nm in olds:
+            have[nm] = olds[nm]
+            oc = ((old_candles or {}).get("indices") or {}).get(nm)
+            if oc:
+                candles_data.setdefault("indices", {})[nm] = oc
+    mb["indices"] = [have[nm] for nm in want if nm in have]
+    data["market"][mk] = mb
+    return missing
+
+def validate_output(data, candles_data, old, old_candles, top, extra, fresh):
+    quality, critical = {}, []
+    for mk, g in _GUARD.items():
+        rows = data.get(mk) or []
+        n = len(rows)
+        fr = fresh.get(mk) or {}
+        hard, soft = [], []                     # soft: (메시지, 치명 여부)
+        # ① 출력 자체 검사(가드 반영 후) — 하드면 직전 데이터로 복원
+        if n < 0.8 * top:
+            hard.append(f"출력 행 수 {n}/{top}")
+        if not (data.get("market_trend") or {}).get(mk):
+            hard.append("시장지수 추세 없음(점수 입력)")
+        if n:
+            bad = sum(1 for r in rows if (r.get("stop_loss_pct") or 0) >= 50)
+            if bad > 0.2 * n:
+                hard.append(f"손절폭 50% 이상 {bad}행(가격 데이터 오염 의심)")
+            pend = sum(1 for r in rows if r.get("total") is None)
+            if pend > 0.3 * n:
+                hard.append(f"데이터대기 {pend}행")
+        if hard:
+            if old and old.get(mk):
+                print(f"::error::{g['label']} 출력 검증 실패 → 직전 데이터로 복원: {', '.join(hard)}")
+                _restore_market(data, candles_data, old, old_candles, mk)
+        # ② 표시용 지수 카드 일부 누락 → 빠진 것만 직전 값으로(비치명)
+        miss = _repair_indices(data, candles_data, old, old_candles, mk)
+        if miss:
+            soft.append((f"지수 {', '.join(miss)} 수집 실패 — 직전 값 표시", False))
+        # ③ 새 수집 상태(가드 이전) — 치명
+        if fr.get("n", 0) < 0.8 * top:
+            soft.append((f"시세 수집 {fr.get('n', 0)}/{top}종목", True))
+        elif fr.get("auto", 0) < 0.8 * fr.get("n", 0):
+            soft.append((f"펀더 자동수집 {fr.get('auto', 0)}/{fr.get('n', 0)}", True))
+        if mk == "kr" and extra.get("dart_expected") and extra.get("dart_filled", 0) < 0.5 * max(fr.get("n", 0), 1):
+            soft.append((f"DART 수집 {extra.get('dart_filled', 0)}종목 — 직전 DART 값 이월·Yahoo 폴백", True))
+        if (extra.get("ranking_source") or {}).get(mk) == "carry":
+            soft.append(("랭킹 수집 실패 — 직전 유니버스 이월", True))
+        if mk == "kr" and extra.get("foreign_flow_status") == "failed":
+            soft.append(("외국인 수급 수집 실패 — 전 종목 중립", True))
+        if CONFIRMED.get(mk) is None:
+            soft.append(("거래소 세션 판정 실패 — 장중 봉 차단이 꺼진 상태", True))
+        # ④ 신선도: 출력 데이터가 마지막 확정 세션보다 2세션 이상 밀리면 원인과 무관하게 치명
+        behind = _sessions_behind(mk, _trade_date(_last_ts(data.get(mk)), mk), CONFIRMED.get(mk))
+        if behind and behind >= 2:
+            soft.append((f"데이터 {behind}세션 지연(확정 {CONFIRMED.get(mk)})", True))
+        if (data.get("stale_guard") or {}).get(mk):
+            soft.append(("역행 가드 발동 — 직전 데이터 유지", False))
+        status = "DEGRADED" if hard else ("WARN" if soft else "OK")
+        quality[mk] = {"status": status, "reasons": hard + [m for m, _ in soft]}
+        critical += [f"{g['label']}: {m}" for m in hard] + [f"{g['label']}: {m}" for m, c in soft if c]
+    if extra.get("fx_source") != "live":
+        critical.append(f"환율 조회 실패({extra.get('fx_source')})")
+    critical += INPUT_ISSUES
+    for mk, q in quality.items():
+        if q["status"] != "OK":
+            print(f"::warning::데이터 품질 {_GUARD[mk]['label']} {q['status']}: {', '.join(q['reasons'])}")
+    data["data_quality"] = quality
+    prev = ((old or {}).get("health") or {}).get("streak", 0) or 0
+    data["health"] = {"status": "CRITICAL" if critical else "OK", "critical": critical,
+                      "streak": (prev + 1) if critical else 0}
+    return data, candles_data
+
+def _carry_universe(old, mk, top):
+    rows = sorted((old or {}).get(mk) or [], key=lambda r: r.get("rank") or 999)
+    return [{"rank": i + 1, "name": r.get("name"), "ticker": r.get("ticker")}
+            for i, r in enumerate(rows[:top]) if r.get("ticker")]
 
 def main():
     top = int(os.environ.get("SCORE_TOP", "50"))
-    fx = fetch_fx(); inp = load_inputs()
-    kr_stocks = fetch_ranking("kr", top)
-    # 미국 ADR 티커로 들어온 한국 종목은 한국 거래소 티커로 치환(원화 시세·한글 이름)
-    for s in kr_stocks:
-        if s["ticker"] in KR_ADR:
-            s["ticker"] = KR_ADR[s["ticker"]]
+    old = _load_json("scores.json") or {}          # 이월·가드·헬스 누적의 기준
+    old_candles = _load_json("candles.json") or {}
+    today = _today_kst()
+
+    # 시장별 마지막 확정 세션 — 이보다 뒤 날짜의 봉(장중 미확정)은 종목·지수·수급 모두에서 제외
+    session = {}
+    for mk in ("kr", "us"):
+        d, intraday = confirmed_session(mk)
+        CONFIRMED[mk] = d
+        session[mk] = {"confirmed": d.isoformat() if d else None, "intraday": intraday}
+        if intraday:
+            print(f"ℹ️ {_GUARD[mk]['label']}장 진행 중(또는 마감 직후) — 당일 미확정 봉 제외, {d} 확정 종가 기준")
+
+    fx, fx_source = fetch_fx(old)
+    inp = load_inputs(today=today)
+    ranking_source = {"kr": "live", "us": "live"}
+
+    # 한국 랭킹: 여유분까지 받아 정규화(ADR→KRX, 우선주→보통주, 비KRX 제외, 중복 제거) 후 상위 top
+    kr_stocks = normalize_kr(fetch_ranking("kr", top + 10), top)
+    if len(kr_stocks) < 0.8 * top:
+        carried = normalize_kr(_carry_universe(old, "kr", top), top)   # 구버전 행의 우선주 등도 정규화
+        if carried:
+            print(f"::warning::한국 랭킹 {len(kr_stocks)}종목 — 직전 유니버스 {len(carried)}종목으로 대체")
+            kr_stocks, ranking_source["kr"] = carried, "carry"
     # 한국 종목 이름을 한글로 (표에 없는 코드는 영문 그대로)
     for s in kr_stocks:
         kn = KR_NAMES.get(s["ticker"].split(".")[0])
         if kn:
             s["name"] = kn
 
-    # DART로 한국 영업이익 YoY 자동 채움 (DART_API_KEY 있을 때만).
-    # 실패하거나 키가 없으면 inputs.csv 값으로 폴백 → 절대 안 깨짐.
+    # 펀더(영업이익 YoY) 출처 우선순위(한국): DART → 직전 DART 값 이월 → Yahoo → 직전 Yahoo 값 이월 → inputs.csv
     dart_filled = 0
     if os.environ.get("DART_API_KEY"):
         try:
@@ -906,9 +1297,11 @@ def main():
             dart_filled = dart.enrich(kr_stocks, os.environ["DART_API_KEY"], inp)
             print(f"DART: 한국 {dart_filled}종목 영업이익 자동 반영")
         except Exception as e:
-            print(f"  ! DART 건너뜀(CSV로 폴백): {e}")
+            print(f"::warning::DART 건너뜀(Yahoo·이월·CSV로 폴백): {e}")
 
-    # DART가 못 채운 한국 종목(미국 상장 ADR·우선주·일부 금융주 등)은 야후로 폴백.
+    # DART가 일시 실패한 종목은 정의가 다른 Yahoo로 갈아타지 말고 직전 DART 값을 먼저 이월
+    kr_carry = carry_fundamentals(kr_stocks, inp, old.get("kr"), today, origins=("dart",))
+    # DART 이력도 없는 한국 종목(ADR·우선주·보험사 등)은 야후로 폴백(DART·이월 값은 덮어쓰지 않음).
     kr_yahoo = 0
     try:
         import us_earnings
@@ -917,33 +1310,50 @@ def main():
             print(f"Yahoo 폴백: 한국 {kr_yahoo}종목 추가 반영")
     except Exception as e:
         print(f"  ! 한국 Yahoo 폴백 건너뜀: {e}")
+    kr_carry += carry_fundamentals(kr_stocks, inp, old.get("kr"), today)
+    if kr_carry:
+        print(f"펀더 이월: 한국 {kr_carry}종목 직전값 사용")
 
-    # 외국인 수급 자동 수집(KRX/pykrx) → foreign_flow 매일 갱신. 실패 시 중립 폴백(안 깨짐).
-    kr_flow = 0
+    # 외국인 수급(네이버 모바일 JSON) → foreign_flow. 절반 미만 성공이면 전 종목 중립.
+    kr_flow, flow_status = 0, "ok"
     try:
         import foreign_flow
-        kr_flow = foreign_flow.enrich(kr_stocks, inp)
-        if kr_flow:
-            print(f"외국인 수급: 한국 {kr_flow}종목 자동 반영")
+        kr_flow = foreign_flow.enrich(kr_stocks, inp, CONFIRMED.get("kr"))
     except Exception as e:
-        print(f"  ! 외국인 수급 건너뜀: {e}")
+        print(f"  ! 외국인 수급 모듈 오류: {e}")
+    print(f"외국인 수급: 한국 {kr_flow}/{len(kr_stocks)}종목 자동 반영")
+    if kr_stocks and kr_flow < 0.5 * len(kr_stocks):
+        flow_status = "failed"
+        print(f"::warning::외국인 수급 자동수집 {kr_flow}/{len(kr_stocks)}종목 — 전 종목 중립 처리")
+        for s in kr_stocks:
+            row = inp.get(s["ticker"])
+            if row:
+                row["foreign_flow"] = "neutral"
+                row.pop("flow_net5", None); row.pop("flow_as_of", None)
 
     candles = {}  # 캔들차트용 종목 OHLC 모음 (candles.json)
-    kr_mkt = index_trend("^KS11")   # v2.9: 시장지수 추세(코스피) — A 시장약세 게이트·B 시장안정 입력
+    kr_mkt = index_trend("^KS11", "kr")   # v2.9: 시장지수 추세(코스피) — A 시장약세 게이트·B 시장안정 입력
     kr_rows = build_market("kr", top, fx, inp, stocks=kr_stocks, candles=candles, mkt=kr_mkt)
 
-    # 미국 종목: 랭킹을 먼저 받고 영업이익 YoY를 무료로 자동 채움(야후, 키 불필요).
-    # 실패하거나 모듈이 없으면 inputs.csv 값으로 폴백 → 절대 안 깨짐.
+    # 미국 종목: 랭킹 → 영업이익 YoY(야후, CSV 수동값은 덮어씀) → 이월
     us_stocks = fetch_ranking("us", top)
+    if len(us_stocks) < 0.8 * top:
+        carried = _carry_universe(old, "us", top)
+        if carried:
+            print(f"::warning::미국 랭킹 {len(us_stocks)}종목 — 직전 유니버스 {len(carried)}종목으로 대체")
+            us_stocks, ranking_source["us"] = carried, "carry"
     us_filled = 0
     try:
         import us_earnings
         us_filled = us_earnings.enrich(us_stocks, inp)
         print(f"US earnings: 미국 {us_filled}종목 영업이익 자동 반영")
     except Exception as e:
-        print(f"  ! US earnings 건너뜀(CSV로 폴백): {e}")
+        print(f"::warning::US earnings 건너뜀(이월·CSV로 폴백): {e}")
+    us_carry = carry_fundamentals(us_stocks, inp, old.get("us"), today)
+    if us_carry:
+        print(f"펀더 이월: 미국 {us_carry}종목 직전값 사용")
 
-    us_mkt = index_trend("^GSPC")   # v2.9: 시장지수 추세(S&P500)
+    us_mkt = index_trend("^GSPC", "us")   # v2.9: 시장지수 추세(S&P500)
     us_rows = build_market("us", top, fx, inp, stocks=us_stocks, candles=candles, mkt=us_mkt)
     print("시황 지수 수집 중…")
     idx_candles = {}  # 캔들차트용 지수 OHLC 모음
@@ -954,15 +1364,20 @@ def main():
     suffix, holiday_notice = notices(kr_closed, kr_hol, us_closed, us_hol)
     if holiday_notice:
         print(holiday_notice)
-    stamp = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M")
+    stamp = datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M")
 
     data = {
         "as_of": stamp + (("   " + suffix) if suffix else ""),
-        "fx_usdkrw": fx, "fx_penalty": fx_penalty(fx),
+        "fx_usdkrw": fx, "fx_penalty": fx_penalty(fx), "fx_source": fx_source,
         "dart_filled_kr": dart_filled,
         "yahoo_filled_kr": kr_yahoo,
+        "fund_carry_kr": kr_carry,
         "foreign_flow_kr": kr_flow,
+        "foreign_flow_status": flow_status,
         "us_filled": us_filled,
+        "fund_carry_us": us_carry,
+        "ranking_source": ranking_source,
+        "session": session,
         "holiday_notice": holiday_notice,
         "kr_closed": kr_closed, "kr_holiday": kr_hol,
         "us_closed": us_closed, "us_holiday": us_hol,
@@ -975,14 +1390,26 @@ def main():
     # 캔들차트용 데이터 — 지연 로드용 별도 파일(용량 절약 위해 압축 저장)
     candles_data = {"as_of": stamp, "stocks": candles, "indices": idx_candles}
 
+    fresh = fresh_summary(data, top)            # 가드·복원 이전의 새 수집 상태(헬스 판정용)
     # 야후 지연 응답(최근 거래일 누락)이 하루 전 데이터로 역행 커밋되는 것을 차단
-    data, candles_data = apply_regression_guard(data, candles_data)
+    data, candles_data = apply_regression_guard(data, candles_data, old, old_candles)
+    # 커밋 전 출력 검증(하드 이상 시 그 시장 복원) + 헬스 누적
+    data, candles_data = validate_output(data, candles_data, old, old_candles, top,
+                                         {"ranking_source": ranking_source, "fx_source": fx_source,
+                                          "foreign_flow_status": flow_status,
+                                          "dart_expected": bool(os.environ.get("DART_API_KEY")),
+                                          "dart_filled": dart_filled}, fresh)
+    # 각 시장 데이터가 실제로 가리키는 거래일(가드·복원 반영 후)
+    data["trade_date"] = {mk: (lambda d: d.isoformat() if d else None)(_trade_date(_last_ts(data.get(mk)), mk))
+                          for mk in ("kr", "us")}
 
     json.dump(data, open("scores.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-    print(f"\n저장: scores.json (KR {len(data['kr'])} · US {len(data['us'])} · 환율 {fx} · 페널티 {data['fx_penalty']})")
+    print(f"\n저장: scores.json (KR {len(data['kr'])} · US {len(data['us'])} · 환율 {fx}({fx_source}) · 페널티 {data['fx_penalty']})")
+    print(f"거래일: {data['trade_date']} · 헬스: {data['health']['status']} streak={data['health']['streak']}"
+          + (f" — {'; '.join(data['health']['critical'])}" if data['health']['critical'] else ""))
 
     json.dump(candles_data, open("candles.json", "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
-    print(f"저장: candles.json (종목 {len(candles)} · 지수 {len(idx_candles)})")
+    print(f"저장: candles.json (종목 {len(candles_data['stocks'])} · 지수 {len(candles_data['indices'])})")
 
 if __name__ == "__main__":
     main()
