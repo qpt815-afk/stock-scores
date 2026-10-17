@@ -1,6 +1,7 @@
 node_modules/
 android/
 www/rc.bundle.js
+attic/rc.bundle.js
 .DS_Store
 *.log
 

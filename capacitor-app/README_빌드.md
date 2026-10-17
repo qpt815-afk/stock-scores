@@ -20,7 +20,7 @@ TWA → **Capacitor** 전환본. 수익화: **AdMob 광고** (배너+전면). �
   - `privacy.html` · `sw.js` — **생성물**(루트에서 복사). 앱 안 '개인정보처리방침' 링크(점수 탭 맨 아래)가 `privacy.html` 로 간다
 - `src/ads-facade.js` — AdMob를 `window.AdsNative`로 노출(번들 소스)
 - `src/native-facade.js` — Push/FCM/인앱리뷰/설치리퍼러를 `window.MSNative`로 노출(번들 소스)
-- `attic/premium.js` · `attic/rc-facade.js` — 구독(RevenueCat) 보류분. **앱에 싣지 않는다**(www/ 밖으로 옮김, 2026-10-14). `_androidwork\www\` 에 옛 `premium.js`·`rc.bundle.js` 가 남아 있으면 지울 것
+- `attic/premium.js` · `attic/rc-facade.js` — 구독(RevenueCat) 보류분. **앱에 싣지 않는다**(www/ 밖으로 옮김, 2026-10-14). 옛 번들 `rc.bundle.js`(7월 빌드물, gitignore)도 2026-10-17 `attic/` 으로 옮겨 robocopy 로 다시 들어가지 않는다. `_androidwork\www\` 에 옛 `premium.js`·`rc.bundle.js` 가 남아 있으면 지울 것
 - `scripts/make-app-html.js` — 루트 `index.html`/`engage.js`/`ping.js`/`privacy.html`/`sw.js` → `www/` 생성 (gtag 제거 + 앱 스크립트 삽입 + APP_VERSION)
 - `scripts/patch-android.js` — **`cap add android` 후 필수 실행** (AdMob 앱ID·singleTop·versionCode·targetSdk·서명·아이콘 + **google-services.json·설치리퍼러 플러그인·알림 아이콘**)
 - `android-res/` — 런처 아이콘(시계+차트) + 알림 작은 아이콘(`drawable-*/ic_stat_ms.png`, 흰 실루엣). patch 스크립트가 res/로 복사
