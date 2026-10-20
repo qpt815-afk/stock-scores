@@ -1,6 +1,6 @@
 {
-  "as_of": "2026-10-20 05:52",
-  "fx_usdkrw": 1332.04,
+  "as_of": "2026-10-20 09:06",
+  "fx_usdkrw": 1330.83,
   "fx_penalty": 0,
   "fx_source": "live",
   "dart_filled_kr": 43,
@@ -7490,14 +7490,19 @@
       "exclude_reason": null
     }
   ],
+  "stale_guard": {
+    "us": "2026-10-19 데이터 유지(새 수집은 2026-10-16까지만 반환)"
+  },
   "data_quality": {
     "kr": {
       "status": "OK",
       "reasons": []
     },
     "us": {
-      "status": "OK",
-      "reasons": []
+      "status": "WARN",
+      "reasons": [
+        "역행 가드 발동 — 직전 데이터 유지"
+      ]
     }
   },
   "health": {
