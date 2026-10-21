@@ -284,9 +284,9 @@
    "total": 0
   },
   "AMGN": {
-   "date": "2026-10-21",
-   "gate": "ok",
-   "total": 77
+   "date": "2026-10-22",
+   "gate": "below",
+   "total": 67
   },
   "AMZN": {
    "date": "2026-10-20",
@@ -344,9 +344,9 @@
    "total": 0
   },
   "GE": {
-   "date": "2026-10-17",
-   "gate": "breakout_watch",
-   "total": 83
+   "date": "2026-10-22",
+   "gate": "below",
+   "total": 51
   },
   "GEV": {
    "date": "2026-10-20",
@@ -354,9 +354,9 @@
    "total": 50
   },
   "GOOG": {
-   "date": "2026-10-21",
-   "gate": "below",
-   "total": 72
+   "date": "2026-10-22",
+   "gate": "exclude",
+   "total": 0
   },
   "GS": {
    "date": "2026-10-20",
@@ -368,15 +368,20 @@
    "gate": "below",
    "total": 60
   },
+  "IBM": {
+   "date": "2026-10-22",
+   "gate": "below",
+   "total": 63
+  },
   "INTC": {
    "date": "2026-10-17",
    "gate": "below",
    "total": 54
   },
   "JNJ": {
-   "date": "2026-10-15",
-   "gate": "below",
-   "total": 65
+   "date": "2026-10-22",
+   "gate": "setup",
+   "total": 75
   },
   "JPM": {
    "date": "2026-10-15",
@@ -389,9 +394,9 @@
    "total": 52
   },
   "KO": {
-   "date": "2026-10-17",
+   "date": "2026-10-22",
    "gate": "below",
-   "total": 56
+   "total": 66
   },
   "LLY": {
    "date": "2026-10-21",
@@ -404,9 +409,9 @@
    "total": 53
   },
   "MA": {
-   "date": "2026-10-21",
-   "gate": "below",
-   "total": 66
+   "date": "2026-10-22",
+   "gate": "ok",
+   "total": 70
   },
   "META": {
    "date": "2026-10-21",
@@ -424,9 +429,9 @@
    "total": 60
   },
   "MSFT": {
-   "date": "2026-10-20",
-   "gate": "ok",
-   "total": 74
+   "date": "2026-10-22",
+   "gate": "below",
+   "total": 68
   },
   "MU": {
    "date": "2026-10-15",
@@ -459,9 +464,9 @@
    "total": 59
   },
   "PLTR": {
-   "date": "2026-10-21",
-   "gate": "ok",
-   "total": 78
+   "date": "2026-10-22",
+   "gate": "below",
+   "total": 66
   },
   "PM": {
    "date": "2026-10-21",
@@ -494,9 +499,9 @@
    "total": 72
   },
   "UNH": {
-   "date": "2026-10-17",
-   "gate": "breakout_watch",
-   "total": 74
+   "date": "2026-10-22",
+   "gate": "exclude",
+   "total": 0
   },
   "V": {
    "date": "2026-10-15",
@@ -519,5 +524,5 @@
    "total": 74
   }
  },
- "updated_at": "2026-10-21T10:49:48+09:00"
+ "updated_at": "2026-10-22T00:36:52+09:00"
 }
