@@ -304,9 +304,9 @@
    "total": 57
   },
   "BAC": {
-   "date": "2026-10-15",
-   "gate": "below",
-   "total": 58
+   "date": "2026-10-28",
+   "gate": "ok",
+   "total": 66
   },
   "BRK-B": {
    "date": "2026-10-27",
@@ -329,9 +329,9 @@
    "total": 65
   },
   "CSCO": {
-   "date": "2026-10-27",
-   "gate": "below",
-   "total": 66
+   "date": "2026-10-28",
+   "gate": "setup",
+   "total": 81
   },
   "CVX": {
    "date": "2026-10-27",
@@ -359,9 +359,9 @@
    "total": 49
   },
   "GS": {
-   "date": "2026-10-27",
-   "gate": "below",
-   "total": 54
+   "date": "2026-10-28",
+   "gate": "ok",
+   "total": 73
   },
   "HD": {
    "date": "2026-10-24",
@@ -419,14 +419,14 @@
    "total": 0
   },
   "MRK": {
-   "date": "2026-10-21",
-   "gate": "below",
-   "total": 54
+   "date": "2026-10-28",
+   "gate": "watch",
+   "total": 43
   },
   "MS": {
-   "date": "2026-10-27",
-   "gate": "below",
-   "total": 54
+   "date": "2026-10-28",
+   "gate": "ok",
+   "total": 81
   },
   "MSFT": {
    "date": "2026-10-24",
@@ -444,9 +444,9 @@
    "total": 54
   },
   "NVDA": {
-   "date": "2026-10-24",
-   "gate": "exclude",
-   "total": 0
+   "date": "2026-10-28",
+   "gate": "below",
+   "total": 62
   },
   "ORCL": {
    "date": "2026-10-15",
@@ -474,14 +474,14 @@
    "total": 69
   },
   "RTX": {
-   "date": "2026-10-15",
+   "date": "2026-10-28",
    "gate": "setup",
-   "total": 84
+   "total": 71
   },
   "SPCX": {
-   "date": "2026-10-27",
-   "gate": "ok",
-   "total": 76
+   "date": "2026-10-28",
+   "gate": "below",
+   "total": 56
   },
   "TMO": {
    "date": "2026-10-27",
@@ -499,9 +499,9 @@
    "total": 69
   },
   "UNH": {
-   "date": "2026-10-22",
-   "gate": "exclude",
-   "total": 0
+   "date": "2026-10-28",
+   "gate": "below",
+   "total": 64
   },
   "V": {
    "date": "2026-10-24",
@@ -524,5 +524,5 @@
    "total": 69
   }
  },
- "updated_at": "2026-10-27T11:16:58+09:00"
+ "updated_at": "2026-10-28T01:01:29+09:00"
 }
