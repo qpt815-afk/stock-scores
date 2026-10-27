@@ -1,6 +1,6 @@
 {
-  "as_of": "2026-10-27 05:51",
-  "fx_usdkrw": 1325.6,
+  "as_of": "2026-10-27 09:16",
+  "fx_usdkrw": 1325.08,
   "fx_penalty": 0,
   "fx_source": "live",
   "dart_filled_kr": 43,
@@ -17,7 +17,7 @@
   "session": {
     "kr": {
       "confirmed": "2026-10-26",
-      "intraday": false
+      "intraday": true
     },
     "us": {
       "confirmed": "2026-10-26",
@@ -7493,14 +7493,19 @@
       "exclude_reason": null
     }
   ],
+  "stale_guard": {
+    "us": "2026-10-26 데이터 유지(새 수집은 2026-10-23까지만 반환)"
+  },
   "data_quality": {
     "kr": {
       "status": "OK",
       "reasons": []
     },
     "us": {
-      "status": "OK",
-      "reasons": []
+      "status": "WARN",
+      "reasons": [
+        "역행 가드 발동 — 직전 데이터 유지"
+      ]
     }
   },
   "health": {
