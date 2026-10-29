@@ -1,6 +1,6 @@
 {
-  "as_of": "2026-10-29 05:51",
-  "fx_usdkrw": 1341.74,
+  "as_of": "2026-10-29 09:31",
+  "fx_usdkrw": 1338.13,
   "fx_penalty": 0,
   "fx_source": "live",
   "dart_filled_kr": 43,
@@ -17,7 +17,7 @@
   "session": {
     "kr": {
       "confirmed": "2026-10-28",
-      "intraday": false
+      "intraday": true
     },
     "us": {
       "confirmed": "2026-10-28",
@@ -36,8 +36,8 @@
       "weak": true,
       "above": false,
       "rising": false,
-      "close": 6012.44,
-      "ma20": 6148.3
+      "close": 5638.34,
+      "ma20": 6192.2
     },
     "us": {
       "score": 10,
@@ -53,13 +53,13 @@
       "indices": [
         {
           "name": "코스피",
-          "val": 6012.44,
-          "chg": 6.63
+          "val": 5638.34,
+          "chg": 3.09
         },
         {
           "name": "코스닥",
-          "val": 771.28,
-          "chg": 3.69
+          "val": 743.83,
+          "chg": 2.29
         }
       ],
       "up": 44,
@@ -7565,14 +7565,19 @@
       "exclude_reason": "A/B/C 조건 모두 불충족"
     }
   ],
+  "stale_guard": {
+    "us": "2026-10-28 데이터 유지(새 수집은 2026-10-27까지만 반환)"
+  },
   "data_quality": {
     "kr": {
       "status": "OK",
       "reasons": []
     },
     "us": {
-      "status": "OK",
-      "reasons": []
+      "status": "WARN",
+      "reasons": [
+        "역행 가드 발동 — 직전 데이터 유지"
+      ]
     }
   },
   "health": {
