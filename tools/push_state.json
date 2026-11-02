@@ -274,9 +274,9 @@
    "total": 78
   },
   "ABBV": {
-   "date": "2026-10-31",
-   "gate": "ok",
-   "total": 70
+   "date": "2026-11-03",
+   "gate": "below",
+   "total": 68
   },
   "AMAT": {
    "date": "2026-10-30",
@@ -284,9 +284,9 @@
    "total": 77
   },
   "AMD": {
-   "date": "2026-10-30",
-   "gate": "ok",
-   "total": 71
+   "date": "2026-11-03",
+   "gate": "exclude",
+   "total": 0
   },
   "AMGN": {
    "date": "2026-10-30",
@@ -309,9 +309,9 @@
    "total": 80
   },
   "BAC": {
-   "date": "2026-10-30",
-   "gate": "ok",
-   "total": 76
+   "date": "2026-11-03",
+   "gate": "below",
+   "total": 51
   },
   "BRK-B": {
    "date": "2026-10-30",
@@ -329,14 +329,14 @@
    "total": 75
   },
   "CRWD": {
-   "date": "2026-10-31",
-   "gate": "ok",
-   "total": 70
+   "date": "2026-11-03",
+   "gate": "below",
+   "total": 58
   },
   "CSCO": {
-   "date": "2026-10-28",
-   "gate": "setup",
-   "total": 81
+   "date": "2026-11-03",
+   "gate": "exclude",
+   "total": 0
   },
   "CVX": {
    "date": "2026-10-31",
@@ -349,9 +349,9 @@
    "total": 0
   },
   "GE": {
-   "date": "2026-10-31",
-   "gate": "breakout_watch",
-   "total": 76
+   "date": "2026-11-03",
+   "gate": "ok",
+   "total": 69
   },
   "GEV": {
    "date": "2026-10-31",
@@ -364,9 +364,9 @@
    "total": 49
   },
   "GS": {
-   "date": "2026-10-31",
-   "gate": "breakout_watch",
-   "total": 75
+   "date": "2026-11-03",
+   "gate": "ok",
+   "total": 69
   },
   "HD": {
    "date": "2026-10-24",
@@ -379,9 +379,9 @@
    "total": 58
   },
   "INTC": {
-   "date": "2026-10-29",
-   "gate": "ok",
-   "total": 74
+   "date": "2026-11-03",
+   "gate": "below",
+   "total": 61
   },
   "JNJ": {
    "date": "2026-10-29",
@@ -399,9 +399,9 @@
    "total": 52
   },
   "KO": {
-   "date": "2026-10-31",
-   "gate": "below",
-   "total": 66
+   "date": "2026-11-03",
+   "gate": "ok",
+   "total": 70
   },
   "LLY": {
    "date": "2026-10-31",
@@ -414,9 +414,9 @@
    "total": 78
   },
   "MA": {
-   "date": "2026-10-31",
-   "gate": "below",
-   "total": 66
+   "date": "2026-11-03",
+   "gate": "ok",
+   "total": 70
   },
   "META": {
    "date": "2026-10-29",
@@ -429,9 +429,9 @@
    "total": 43
   },
   "MS": {
-   "date": "2026-10-29",
-   "gate": "setup",
-   "total": 88
+   "date": "2026-11-03",
+   "gate": "ok",
+   "total": 75
   },
   "MSFT": {
    "date": "2026-10-31",
@@ -464,14 +464,14 @@
    "total": 48
   },
   "PG": {
-   "date": "2026-10-24",
-   "gate": "watch",
-   "total": 56
+   "date": "2026-11-03",
+   "gate": "ok",
+   "total": 72
   },
   "PLTR": {
-   "date": "2026-10-31",
-   "gate": "ok",
-   "total": 70
+   "date": "2026-11-03",
+   "gate": "exclude",
+   "total": 0
   },
   "PM": {
    "date": "2026-10-27",
@@ -489,9 +489,9 @@
    "total": 61
   },
   "TMO": {
-   "date": "2026-10-27",
-   "gate": "watch",
-   "total": 68
+   "date": "2026-11-03",
+   "gate": "ok",
+   "total": 74
   },
   "TSLA": {
    "date": "2026-10-29",
@@ -519,9 +519,9 @@
    "total": 78
   },
   "WMT": {
-   "date": "2026-10-24",
-   "gate": "watch",
-   "total": 67
+   "date": "2026-11-03",
+   "gate": "ok",
+   "total": 71
   },
   "XOM": {
    "date": "2026-10-31",
@@ -529,5 +529,5 @@
    "total": 72
   }
  },
- "updated_at": "2026-11-02T11:39:55+09:00"
+ "updated_at": "2026-11-03T05:30:16+09:00"
 }
