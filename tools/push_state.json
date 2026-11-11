@@ -409,9 +409,9 @@
    "total": 61
   },
   "JNJ": {
-   "date": "2026-11-06",
-   "gate": "exclude",
-   "total": 0
+   "date": "2026-11-12",
+   "gate": "watch",
+   "total": 53
   },
   "JPM": {
    "date": "2026-11-11",
@@ -444,9 +444,9 @@
    "total": 64
   },
   "META": {
-   "date": "2026-11-07",
-   "gate": "below",
-   "total": 36
+   "date": "2026-11-12",
+   "gate": "exclude",
+   "total": 0
   },
   "MRK": {
    "date": "2026-11-06",
@@ -469,9 +469,9 @@
    "total": 53
   },
   "NFLX": {
-   "date": "2026-11-05",
-   "gate": "ok",
-   "total": 83
+   "date": "2026-11-12",
+   "gate": "below",
+   "total": 56
   },
   "NVDA": {
    "date": "2026-11-07",
@@ -479,9 +479,9 @@
    "total": 54
   },
   "ORCL": {
-   "date": "2026-11-11",
-   "gate": "ok",
-   "total": 71
+   "date": "2026-11-12",
+   "gate": "below",
+   "total": 56
   },
   "PANW": {
    "date": "2026-11-11",
@@ -514,14 +514,14 @@
    "total": 73
   },
   "TMO": {
-   "date": "2026-11-07",
+   "date": "2026-11-12",
    "gate": "watch",
-   "total": 58
+   "total": 68
   },
   "TSLA": {
-   "date": "2026-11-07",
-   "gate": "below",
-   "total": 38
+   "date": "2026-11-12",
+   "gate": "watch",
+   "total": 28
   },
   "TXN": {
    "date": "2026-11-11",
@@ -554,5 +554,5 @@
    "total": 0
   }
  },
- "updated_at": "2026-11-11T11:54:26+09:00"
+ "updated_at": "2026-11-12T03:02:38+09:00"
 }
