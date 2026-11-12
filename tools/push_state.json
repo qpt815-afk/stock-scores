@@ -294,9 +294,9 @@
    "total": 68
   },
   "AMAT": {
-   "date": "2026-11-04",
-   "gate": "below",
-   "total": 55
+   "date": "2026-11-13",
+   "gate": "risk",
+   "total": 70
   },
   "AMD": {
    "date": "2026-11-11",
@@ -309,9 +309,9 @@
    "total": 65
   },
   "AMZN": {
-   "date": "2026-11-11",
-   "gate": "exclude",
-   "total": 0
+   "date": "2026-11-13",
+   "gate": "watch",
+   "total": 69
   },
   "ANET": {
    "date": "2026-11-11",
@@ -319,9 +319,9 @@
    "total": 0
   },
   "AVGO": {
-   "date": "2026-11-04",
-   "gate": "below",
-   "total": 58
+   "date": "2026-11-13",
+   "gate": "risk",
+   "total": 75
   },
   "AXP": {
    "date": "2026-11-06",
@@ -329,9 +329,9 @@
    "total": 74
   },
   "BAC": {
-   "date": "2026-11-11",
-   "gate": "below",
-   "total": 62
+   "date": "2026-11-13",
+   "gate": "watch",
+   "total": 45
   },
   "BRK-B": {
    "date": "2026-11-04",
@@ -339,9 +339,9 @@
    "total": 69
   },
   "CAT": {
-   "date": "2026-10-15",
-   "gate": "below",
-   "total": 56
+   "date": "2026-11-13",
+   "gate": "ok",
+   "total": 79
   },
   "COST": {
    "date": "2026-11-04",
@@ -359,9 +359,9 @@
    "total": 54
   },
   "CVX": {
-   "date": "2026-11-06",
-   "gate": "exclude",
-   "total": 0
+   "date": "2026-11-13",
+   "gate": "setup",
+   "total": 71
   },
   "DELL": {
    "date": "2026-11-10",
@@ -389,9 +389,9 @@
    "total": 80
   },
   "GS": {
-   "date": "2026-11-11",
-   "gate": "ok",
-   "total": 73
+   "date": "2026-11-13",
+   "gate": "setup",
+   "total": 71
   },
   "HD": {
    "date": "2026-11-06",
@@ -434,9 +434,9 @@
    "total": 64
   },
   "LRCX": {
-   "date": "2026-11-04",
-   "gate": "below",
-   "total": 58
+   "date": "2026-11-13",
+   "gate": "risk",
+   "total": 73
   },
   "MA": {
    "date": "2026-11-04",
@@ -464,9 +464,9 @@
    "total": 64
   },
   "MU": {
-   "date": "2026-11-06",
-   "gate": "below",
-   "total": 53
+   "date": "2026-11-13",
+   "gate": "risk",
+   "total": 70
   },
   "NFLX": {
    "date": "2026-11-12",
@@ -479,9 +479,9 @@
    "total": 54
   },
   "ORCL": {
-   "date": "2026-11-12",
-   "gate": "below",
-   "total": 56
+   "date": "2026-11-13",
+   "gate": "ok",
+   "total": 76
   },
   "PANW": {
    "date": "2026-11-11",
@@ -494,14 +494,14 @@
    "total": 56
   },
   "PLTR": {
-   "date": "2026-11-07",
-   "gate": "below",
-   "total": 50
-  },
-  "PM": {
-   "date": "2026-11-11",
+   "date": "2026-11-13",
    "gate": "exclude",
    "total": 0
+  },
+  "PM": {
+   "date": "2026-11-13",
+   "gate": "watch",
+   "total": 58
   },
   "RTX": {
    "date": "2026-11-11",
@@ -509,9 +509,9 @@
    "total": 79
   },
   "SPCX": {
-   "date": "2026-11-11",
-   "gate": "risk",
-   "total": 73
+   "date": "2026-11-13",
+   "gate": "ok",
+   "total": 71
   },
   "TMO": {
    "date": "2026-11-12",
@@ -519,9 +519,9 @@
    "total": 68
   },
   "TSLA": {
-   "date": "2026-11-12",
-   "gate": "watch",
-   "total": 28
+   "date": "2026-11-13",
+   "gate": "below",
+   "total": 45
   },
   "TXN": {
    "date": "2026-11-11",
@@ -549,10 +549,10 @@
    "total": 67
   },
   "XOM": {
-   "date": "2026-11-06",
-   "gate": "exclude",
-   "total": 0
+   "date": "2026-11-13",
+   "gate": "below",
+   "total": 63
   }
  },
- "updated_at": "2026-11-12T13:00:06+09:00"
+ "updated_at": "2026-11-13T03:35:37+09:00"
 }
