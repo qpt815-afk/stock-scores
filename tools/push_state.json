@@ -324,9 +324,9 @@
    "total": 75
   },
   "AXP": {
-   "date": "2026-11-06",
-   "gate": "setup",
-   "total": 74
+   "date": "2026-11-17",
+   "gate": "watch",
+   "total": 56
   },
   "BAC": {
    "date": "2026-11-14",
@@ -399,14 +399,14 @@
    "total": 57
   },
   "IBM": {
-   "date": "2026-11-10",
+   "date": "2026-11-17",
    "gate": "below",
-   "total": 36
+   "total": 64
   },
   "INTC": {
-   "date": "2026-11-14",
-   "gate": "risk",
-   "total": 71
+   "date": "2026-11-17",
+   "gate": "ok",
+   "total": 66
   },
   "JNJ": {
    "date": "2026-11-12",
@@ -444,14 +444,14 @@
    "total": 64
   },
   "META": {
-   "date": "2026-11-14",
-   "gate": "below",
-   "total": 49
+   "date": "2026-11-17",
+   "gate": "exclude",
+   "total": 0
   },
   "MRK": {
-   "date": "2026-11-14",
-   "gate": "setup",
-   "total": 72
+   "date": "2026-11-17",
+   "gate": "exclude",
+   "total": 0
   },
   "MS": {
    "date": "2026-11-11",
@@ -494,9 +494,9 @@
    "total": 56
   },
   "PLTR": {
-   "date": "2026-11-13",
-   "gate": "exclude",
-   "total": 0
+   "date": "2026-11-17",
+   "gate": "below",
+   "total": 60
   },
   "PM": {
    "date": "2026-11-13",
@@ -509,9 +509,9 @@
    "total": 69
   },
   "SPCX": {
-   "date": "2026-11-13",
-   "gate": "ok",
-   "total": 71
+   "date": "2026-11-17",
+   "gate": "below",
+   "total": 62
   },
   "TMO": {
    "date": "2026-11-12",
@@ -554,5 +554,5 @@
    "total": 63
   }
  },
- "updated_at": "2026-11-16T11:55:56+09:00"
+ "updated_at": "2026-11-17T05:40:18+09:00"
 }
