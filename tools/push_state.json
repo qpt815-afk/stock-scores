@@ -294,9 +294,9 @@
    "total": 68
   },
   "AMAT": {
-   "date": "2026-11-13",
-   "gate": "risk",
-   "total": 70
+   "date": "2026-11-18",
+   "gate": "below",
+   "total": 49
   },
   "AMD": {
    "date": "2026-11-11",
@@ -329,9 +329,9 @@
    "total": 56
   },
   "BAC": {
-   "date": "2026-11-14",
+   "date": "2026-11-18",
    "gate": "below",
-   "total": 62
+   "total": 39
   },
   "BRK-B": {
    "date": "2026-11-04",
@@ -339,9 +339,9 @@
    "total": 69
   },
   "CAT": {
-   "date": "2026-11-13",
-   "gate": "ok",
-   "total": 79
+   "date": "2026-11-18",
+   "gate": "below",
+   "total": 58
   },
   "COST": {
    "date": "2026-11-04",
@@ -354,9 +354,9 @@
    "total": 0
   },
   "CSCO": {
-   "date": "2026-11-14",
-   "gate": "ok",
-   "total": 73
+   "date": "2026-11-18",
+   "gate": "below",
+   "total": 54
   },
   "CVX": {
    "date": "2026-11-13",
@@ -384,14 +384,14 @@
    "total": 54
   },
   "GOOG": {
-   "date": "2026-11-10",
-   "gate": "ok",
-   "total": 80
+   "date": "2026-11-18",
+   "gate": "below",
+   "total": 55
   },
   "GS": {
-   "date": "2026-11-14",
-   "gate": "ok",
-   "total": 73
+   "date": "2026-11-18",
+   "gate": "below",
+   "total": 51
   },
   "HD": {
    "date": "2026-11-06",
@@ -399,14 +399,14 @@
    "total": 57
   },
   "IBM": {
-   "date": "2026-11-17",
+   "date": "2026-11-18",
    "gate": "below",
-   "total": 64
+   "total": 44
   },
   "INTC": {
-   "date": "2026-11-17",
-   "gate": "ok",
-   "total": 66
+   "date": "2026-11-18",
+   "gate": "below",
+   "total": 55
   },
   "JNJ": {
    "date": "2026-11-12",
@@ -434,9 +434,9 @@
    "total": 64
   },
   "LRCX": {
-   "date": "2026-11-13",
-   "gate": "risk",
-   "total": 73
+   "date": "2026-11-18",
+   "gate": "below",
+   "total": 48
   },
   "MA": {
    "date": "2026-11-04",
@@ -449,14 +449,14 @@
    "total": 0
   },
   "MRK": {
-   "date": "2026-11-17",
-   "gate": "exclude",
-   "total": 0
+   "date": "2026-11-18",
+   "gate": "setup",
+   "total": 68
   },
   "MS": {
-   "date": "2026-11-11",
-   "gate": "setup",
-   "total": 74
+   "date": "2026-11-18",
+   "gate": "below",
+   "total": 40
   },
   "MSFT": {
    "date": "2026-10-31",
@@ -464,9 +464,9 @@
    "total": 64
   },
   "MU": {
-   "date": "2026-11-13",
-   "gate": "risk",
-   "total": 70
+   "date": "2026-11-18",
+   "gate": "below",
+   "total": 49
   },
   "NFLX": {
    "date": "2026-11-12",
@@ -479,9 +479,9 @@
    "total": 54
   },
   "ORCL": {
-   "date": "2026-11-13",
-   "gate": "ok",
-   "total": 76
+   "date": "2026-11-18",
+   "gate": "below",
+   "total": 53
   },
   "PANW": {
    "date": "2026-11-11",
@@ -504,14 +504,14 @@
    "total": 58
   },
   "RTX": {
-   "date": "2026-11-14",
+   "date": "2026-11-18",
    "gate": "watch",
-   "total": 69
+   "total": 54
   },
   "SPCX": {
-   "date": "2026-11-17",
+   "date": "2026-11-18",
    "gate": "below",
-   "total": 62
+   "total": 46
   },
   "TMO": {
    "date": "2026-11-12",
@@ -554,5 +554,5 @@
    "total": 63
   }
  },
- "updated_at": "2026-11-17T14:10:29+09:00"
+ "updated_at": "2026-11-18T04:23:43+09:00"
 }
