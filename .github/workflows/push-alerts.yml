@@ -1,36 +1,62 @@
 name: Push alerts (관심종목 점수 변동 · 아침 브리핑)
 
-# 언제: 평일 08:30 KST(한국 점수 갱신 05:47 뒤) = 전날 23:30 UTC · 평일 19:45 KST(미국 점수 갱신 19:13 뒤) = 10:45 UTC
+# 언제 (v3.5, 2026-11-18)
+#   ① 점수 갱신(Daily v2.2 Scores)이 끝나면 바로 — 그 워크플로는 외부 스케줄러가 05:47·19:13 KST 에 정시 실행한다.
+#      · 19:13 KST 갱신(한국 당일 종가 + 미국 전날 밤) 직후 ≈19:25 KST 에 변동 알림.
+#      · 05:47 KST 갱신 직후 실행은 08:30 KST 까지 기다렸다가 아침 브리핑(+ 밤사이 미뤄 둔 변동 알림)을 보낸다.
+#      · 늦게 도는 GitHub 예약 점수 갱신 뒤에도 돈다(보낼 변동이 있을 때만 보냄).
+#   ② 예비 cron(GitHub 예약 — 보통 몇 시간 늦음): ①이 빠진 날을 챙긴다. 이미 보낸 것은 다시 보내지 않는다.
+#   ③ 수동(workflow_dispatch): auto / manual / test.
+#   무엇을 보낼지는 tools/push_alerts.py --auto 가 실행 시각(KST)으로 정한다 — 조용한 시간 22:00~08:00 에는 미룬다.
+#   v3.4 까지는 이 워크플로의 GitHub 예약 실행만 썼는데 3~10시간 늦게 돌아 '08:30 브리핑'이 11:52~14:10,
+#   '19:45 미국 알림'이 새벽 02:40~06:05 에 갔다(2026-11 실측).
 # 무엇: tools/push_alerts.py 가 scores.json 과 tools/push_state.json(마지막 알림 기준선)을 비교해
 #       FCM 토픽(s_<ticker>)으로 점수 변동 알림, brief_kr 로 아침 브리핑을 보낸다. 서버에 사용자 데이터 없음.
 # 비밀: FCM_SERVICE_ACCOUNT (Firebase 콘솔 > 프로젝트 설정 > 서비스 계정 > 새 비공개 키 생성 → JSON 전체).
 #       없으면 dry-run 으로만 돌고 실패하지 않는다(Firebase 설정 전 단계).
+# 기기 테스트: Actions > 이 워크플로 > Run workflow > mode=test, test_code=<앱 '내 관심종목' 카드의 테스트 코드>
+#       → 그 기기 1대에만 테스트 알림 1건 (dry_run 값과 무관하게 실제로 보낸다).
 on:
+  workflow_run:
+    workflows: ["Daily v2.2 Scores"]
+    types: [completed]
   schedule:
-    - cron: "30 23 * * 0-4"   # 월~금 08:30 KST (UTC 일~목 23:30)
-    - cron: "45 10 * * 1-5"   # 월~금 19:45 KST
+    - cron: "11 23 * * 0-4"   # 예비: 평일 08:11 KST
+    - cron: "41 10 * * 1-5"   # 예비: 평일 19:41 KST
   workflow_dispatch:
     inputs:
+      mode:
+        description: "auto(시각으로 판단) / manual(아래 market·brief 그대로) / test(테스트 코드 기기 1대에 1건)"
+        default: "auto"
       market:
-        description: "kr / us / both"
+        description: "manual 일 때: kr / us / both"
         default: "both"
       brief:
-        description: "아침 브리핑도 보낼지 (true/false)"
+        description: "manual 일 때: 아침 브리핑도 보낼지 (true/false)"
         default: "false"
       dry_run:
-        description: "보내지 않고 출력만 (true/false)"
+        description: "보내지 않고 출력만 (true/false) — test 는 이 값과 무관하게 실제 발송"
         default: "true"
+      test_code:
+        description: "test 일 때: 앱 '내 관심종목' 카드 알림 스위치 아래의 테스트 코드"
+        default: ""
 
 permissions:
   contents: write   # tools/push_state.json 커밋
 
 concurrency:
-  group: push-alerts
+  # 평일 05:57~08:30 에는 브리핑을 기다리는 실행이 그룹을 잡고 있다 — 기기 테스트(mode=test)는 기준선을 안 건드리니 따로 돌린다.
+  group: ${{ github.event.inputs.mode == 'test' && 'push-alerts-test' || 'push-alerts' }}
   cancel-in-progress: false
 
 jobs:
   push:
+    # 점수 갱신이 취소·생략됐으면 돌지 않는다. 실패여도 데이터 커밋은 끝났을 수 있어 돈다(품질 이상은 스크립트가 거른다).
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion != 'cancelled' && github.event.workflow_run.conclusion != 'skipped')
     runs-on: ubuntu-latest
+    timeout-minutes: 240   # 아침 브리핑 대기(최대 3시간) 포함
     steps:
       - uses: actions/checkout@v4
         with:
@@ -44,21 +70,41 @@ jobs:
 
       - name: 실행 인자 결정
         id: args
+        env:
+          EV: ${{ github.event_name }}
+          IN_MODE: ${{ github.event.inputs.mode }}
+          IN_MARKET: ${{ github.event.inputs.market }}
+          IN_BRIEF: ${{ github.event.inputs.brief }}
+          IN_DRY: ${{ github.event.inputs.dry_run }}
+          IN_CODE: ${{ github.event.inputs.test_code }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            A="--market ${{ github.event.inputs.market }}"
-            [ "${{ github.event.inputs.brief }}" = "true" ] && A="$A --brief"
-            [ "${{ github.event.inputs.dry_run }}" = "true" ] && A="$A --dry-run"
-          elif [ "${{ github.event.schedule }}" = "30 23 * * 0-4" ]; then
-            A="--market kr --brief"
-          else
-            A="--market us"
+          MODE=auto; A="--auto"
+          if [ "$EV" = "workflow_dispatch" ]; then
+            case "$IN_MODE" in
+              test)
+                MODE=test; CODE=$(printf '%s' "$IN_CODE" | tr -cd 'A-Za-z0-9')
+                [ -n "$CODE" ] || { echo "::error::mode=test 에는 test_code(앱 알림 카드의 테스트 코드)가 필요합니다"; exit 1; }
+                A="--test $CODE" ;;
+              manual)
+                MODE=manual; A="--market $(printf '%s' "$IN_MARKET" | tr -cd 'a-z')"
+                [ "$IN_BRIEF" = "true" ] && A="$A --brief" ;;
+            esac
+            [ "$IN_DRY" = "true" ] && [ "$MODE" != "test" ] && A="$A --dry-run"
           fi
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
           echo "args=$A" >> "$GITHUB_OUTPUT"
-          echo "args: $A"
+          echo "event=$EV · mode=$MODE · args: $A"
+
+      - name: 아침 브리핑 시각(08:30 KST)까지 대기 — 평일 05:30~08:30 에 시작한 자동 실행만
+        if: steps.args.outputs.mode == 'auto'
+        env:
+          ARGS: ${{ steps.args.outputs.args }}
+        run: |
+          case " $ARGS " in *" --dry-run "*) python tools/push_alerts.py --wait-for-brief --dry-run ;; *) python tools/push_alerts.py --wait-for-brief ;; esac
+          git pull -q --ff-only origin main   # 기다리는 동안 점수·기준선이 갱신됐을 수 있다
 
       # Supabase 무료 프로젝트는 7일간 API 요청이 없으면 일시중지된다(2026-10-14 실제로 멈춰 있어 핑이 9월 중순부터 끊겼었음).
-      # 하루 2번 익명 키로 가벼운 요청을 보내 '활동'을 유지한다(데이터 변경 없음).
+      # 이 워크플로가 돌 때마다 익명 키로 가벼운 요청을 보내 '활동'을 유지한다(데이터 변경 없음).
       # 결과 해석: HTTP 403 = 정상(프로젝트가 응답했고 ms_weekly 가 '토큰 틀림' 으로 거절 — 토큰은 일부러 안 넣음) · 404 = 함수 없음(SQL 패치 안 됨) · 000 = DNS 실패(일시중지됨 → 대시보드에서 Restore)
       - name: Supabase 깨우기(일시중지 방지)
         run: |
@@ -69,7 +115,8 @@ jobs:
       - name: 푸시 발송
         env:
           FCM_SERVICE_ACCOUNT: ${{ secrets.FCM_SERVICE_ACCOUNT }}
-        run: python tools/push_alerts.py ${{ steps.args.outputs.args }}
+          ARGS: ${{ steps.args.outputs.args }}
+        run: python tools/push_alerts.py $ARGS
 
       - name: 기준선(push_state.json) 커밋
         run: |

@@ -185,6 +185,13 @@
   .sw::after{ content:""; position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; transition:.15s; }
   .sw.on{ background:var(--ok); } .sw.on::after{ left:19px; }
   .sw:disabled{ opacity:.4; cursor:default; }
+  .pstat{ display:flex; align-items:center; gap:8px; margin-top:9px; padding:8px 10px; border-radius:10px; background:var(--card-2); font-size:12.5px; line-height:1.45; color:var(--muted); }
+  .pstat span{ flex:1; min-width:0; }
+  .pstat.ok{ color:var(--ok); }
+  .pstat.err{ color:var(--blocked); border:1px solid currentColor; }
+  .pstat .btn-s{ padding:6px 10px; font-size:12.5px; flex-shrink:0; }
+  .pcode{ margin-top:6px; font-size:11.5px; color:var(--faint); }
+  .pcode b{ font-family:var(--mono); font-weight:600; letter-spacing:.06em; color:var(--muted); user-select:all; -webkit-user-select:all; }
   .webhint{ margin:0 16px 10px; padding:11px 13px; border:1px dashed rgba(210,166,78,.45); border-radius:12px; font-size:13px; line-height:1.55; color:var(--muted); display:flex; gap:10px; align-items:center; }
   .webhint a{ color:var(--gold); font-weight:700; text-decoration:none; white-space:nowrap; }
   .webhint .x{ margin-left:auto; color:var(--faint); background:transparent; border:0; font-size:18px; cursor:pointer; line-height:1; }
@@ -769,7 +776,11 @@ function App() {
   const toggleWatch = (e, t) => { e.stopPropagation(); if (!E()) return; if (!E().watch.toggle(t)) alert("관심종목은 30개까지 등록할 수 있어요."); };
   const enablePush = async () => {
     if (!E() || pushBusy) return; setPushBusy(true);
-    try { const r = await E().push.enable(); if (!r.ok && r.reason === "denied") alert("알림 권한이 꺼져 있어요. 휴대폰 설정 > 앱 > 매수 스카우터 > 알림에서 켤 수 있어요."); }
+    try {
+      const r = await E().push.enable();
+      if (!r.ok && r.reason === "denied") alert("알림 권한이 꺼져 있어요. 휴대폰 설정 > 앱 > 매수 스카우터 > 알림에서 켤 수 있어요.");
+      else if (!r.ok && r.reason === "error") alert("알림을 켜지 못했어요. 잠시 뒤 다시 시도해 주세요.");
+    }
     finally { setPushBusy(false); }
   };
   const finishOnb = async (skipped) => {
@@ -1142,6 +1153,7 @@ function WatchCard({ data, watchList, pushOn, pushAvail, pushBusy, enablePush, o
   ["kr", "us"].forEach(m => (data[m] || []).forEach(x => { if (watchList.indexOf(x.ticker) >= 0) rows.push({ m, x }); }));
   rows.sort((a, b) => (b.x.total ?? -1) - (a.x.total ?? -1));
   const briefOn = !!(E() && E().push.briefOn());
+  const pst = pushOn && E() && E().push.status ? E().push.status() : null;
   return /*#__PURE__*/React.createElement("div", { className: "wcard" },
     /*#__PURE__*/React.createElement("div", { className: "wcard-h" },
       /*#__PURE__*/React.createElement("span", { className: "l" }, "내 관심종목"),
@@ -1163,7 +1175,12 @@ function WatchCard({ data, watchList, pushOn, pushAvail, pushBusy, enablePush, o
       /*#__PURE__*/React.createElement("div", { className: "tgl" }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "점수 변동 알림"), " · 관심종목 ±10점 / 기준충족 변동"),
         /*#__PURE__*/React.createElement("button", { className: "sw" + (pushOn ? " on" : ""), "aria-label": "점수 변동 알림", disabled: pushBusy, onClick: () => pushOn ? E().push.disable() : enablePush() })),
       /*#__PURE__*/React.createElement("div", { className: "tgl" }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "아침 브리핑"), " · 평일 08:30 시장 점수 요약"),
-        /*#__PURE__*/React.createElement("button", { className: "sw" + (pushOn && briefOn ? " on" : ""), "aria-label": "아침 브리핑", disabled: pushBusy || !pushOn, onClick: () => E().push.setBrief(!briefOn) })))
+        /*#__PURE__*/React.createElement("button", { className: "sw" + (pushOn && briefOn ? " on" : ""), "aria-label": "아침 브리핑", disabled: pushBusy || !pushOn, onClick: () => E().push.setBrief(!briefOn) })),
+      // v3.5: 알림 연결 상태 — 등록·구독이 실패해도 스위치만 켜져 보이던 것을 화면에 드러낸다
+      pushOn && pst && /*#__PURE__*/React.createElement("div", { className: "pstat " + pst.level, role: "status" },
+        /*#__PURE__*/React.createElement("span", null, (pst.level === "ok" ? "✓ " : pst.level === "err" ? "⚠ " : "") + pst.text),
+        pst.level === "err" && /*#__PURE__*/React.createElement("button", { className: "btn-s", disabled: pushBusy, onClick: () => E().push.resync() }, "다시 연결")),
+      pushOn && /*#__PURE__*/React.createElement("div", { className: "pcode" }, "알림 테스트 코드 ", /*#__PURE__*/React.createElement("b", null, E().push.code())))
       : null,
     /*#__PURE__*/React.createElement("div", { className: "fine" }, "알림은 점수 변동 사실만 전합니다. 투자 권유가 아니며 판단과 책임은 본인에게 있습니다."));
 }

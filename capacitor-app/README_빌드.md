@@ -2,6 +2,14 @@
 
 TWA → **Capacitor** 전환본. 수익화: **AdMob 광고** (배너+전면). 구독(RevenueCat)은 유사투자자문업 신고 전까지 보류.
 
+> **v3.5 (2026-11-18, versionCode 8) — "알림이 안 뜬다" 수정**
+> - `capacitor.config.json` 에 `plugins.PushNotifications.presentationOptions` 추가 — 없으면 **앱이 열려 있을 때 온 알림은 아무것도 표시되지 않았다**.
+> - 알림 연결 상태를 '내 관심종목' 카드에 표시(연결됨 / 연결 중 / 실패 사유 + **다시 연결**). 휴대폰 설정에서 알림 종류(채널)를 꺼 두면 안내.
+>   그 전엔 등록·구독이 실패해도 스위치만 켜져 보였다.
+> - 카드 맨 아래 **알림 테스트 코드** → GitHub Actions > *Push alerts* > Run workflow > `mode=test`, `test_code=<코드>` 로 그 기기에만 1건.
+> - `patch-android.js` 가 `POST_NOTIFICATIONS` 권한을 매니페스트에 직접 적는다(Android 13+ 권한 창).
+> - 서버 쪽(발송 시각·15건 상한 폐지)은 앱 업데이트 없이 `main` 반영만으로 적용 — 저장소 `tools/push_alerts.py` 머리말 참고.
+>
 > **v3.4 (2026-10-14) 핵심 변경 — 먼저 읽을 것**
 > - **앱 화면의 정본은 저장소 루트 `index.html`(웹)** 이다. `www/index.html`·`www/engage.js`·`www/ping.js` 는
 >   `npm run html`(= `scripts/make-app-html.js`)이 **생성**한다. 세 파일을 손으로 고치지 말 것(다음 생성 때 덮어씀).
@@ -50,8 +58,9 @@ cd android && .\gradlew.bat bundleRelease   # 서명된 AAB → app/build/output
 2. **`scripts/patch-android.js` 상단**: versionCode 증가 (v3.3 = 6, **v3.4 = 7**, 다음은 8) / `TARGET_SDK`는 Play 요구사항 상향 시 갱신 (2026-08-31 기한 = 36 반영됨) / `MIN_SDK = 24` — Play **자동 보호(앱 무결성)** 가 켜져 있어 minSdk 23 AAB 는 업로드가 거부된다(2026-10-14 확인)
 3. 같은 keystore(`출시/upload-keystore.jks`, 별칭 upload)로 서명 — patch가 자동 주입 (출시/키스토어_비밀번호.txt 필요)
 4. 화면을 바꿀 땐 **루트 `index.html`** 을 고치고 `npm run sync`(html 포함) — `www/index.html` 직접 수정 금지
-5. **실기기 확인(v3.4)**: 첫 실행 온보딩 → 관심종목 저장 → 알림 권한 허용 → 브리핑 탭 '내 관심종목' 카드에 스위치 ON 확인.
-   Firebase 콘솔 > Messaging > 테스트 메시지 대신 GitHub Actions `push-alerts.yml` 을 `workflow_dispatch` 로 `dry_run=false` 실행하면 실제 토픽으로 발송된다.
+5. **실기기 확인(v3.5)**: 첫 실행 온보딩 → 관심종목 저장 → 알림 권한 허용 → 브리핑 탭 '내 관심종목' 카드에 스위치 ON + **"✓ 알림 연결됨"** 확인.
+   카드 맨 아래 '알림 테스트 코드'를 적고 GitHub Actions > *Push alerts* > Run workflow > `mode=test`, `test_code=<코드>` → 몇 초 안에 그 폰에 "🔔 매수 스카우터 알림 테스트"가 떠야 정상.
+   앱을 **연 채로** 한 번, **닫은 채로** 한 번 확인(열린 상태 표시는 v3.5 부터). 안 뜨면: 카드의 상태 문구 → 휴대폰 설정 > 앱 > 매수 스카우터 > 알림 / 배터리(절전 예외).
 6. Play Console 선언: 광고 **있음** + 광고 ID **예** + 데이터 보안(기기 ID) — `AdMob_광고수익_가이드.md` 5번 참고.
    **v3.4 추가 선언**: 데이터 보안 양식에 '앱 활동 > 앱 상호작용'(수집·공유 안 함·분석 목적) 추가 — 익명 이벤트(관심종목 등록·알림 설정·설치 리퍼러) 때문.
 7. 구독 재도입 시: `attic/` 의 premium.js·rc-facade.js 를 되살리고 `npm i @revenuecat/purchases-capacitor` + esbuild 로 `www/rc.bundle.js` 생성 → premium.js `FREE_MODE:false` + RC 키 → **유사투자자문업 신고 선행**

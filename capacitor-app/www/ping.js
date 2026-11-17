@@ -13,7 +13,7 @@
     SUPABASE_URL: "https://xwyrwxnqvbgjcxqvujvs.supabase.co",
     // 공개 가능한 클라이언트 키(쓰기: ms_ping / ms_event 테이블 '추가'만 허용됨)
     SUPABASE_KEY: "sb_publishable_Z53o09xGVPaOlAVoeyNWPg_kOR26Xg3",
-    APP_VERSION: "3.4"   // ★ 수동 편집 불필요 — 앱 빌드 시 scripts/make-app-html.js 가 VERSION_NAME 으로 바꿔 넣음
+    APP_VERSION: "3.5"   // ★ 수동 편집 불필요 — 앱 빌드 시 scripts/make-app-html.js 가 VERSION_NAME 으로 바꿔 넣음
   };
 
   function uuid() {
