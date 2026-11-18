@@ -16,7 +16,7 @@
    10) firebase/google-services.json → android/app/ 복사 (푸시 알림 필수. 없으면 중단)
    11) 설치 리퍼러 미니 플러그인 주입: InstallReferrerPlugin.java 생성 + installreferrer 라이브러리 의존성
        + MainActivity 에 registerPlugin — 쇼츠/블로그 링크의 utm 이 설치 후 앱으로 전달되는 경로
-   12) 알림 작은 아이콘(흰 실루엣) meta-data + FCM 기본 알림 채널 지정
+   12) 알림 작은 아이콘(흰 실루엣) meta-data + FCM 기본 알림 채널 지정 + (v3.5) POST_NOTIFICATIONS 권한 명시
    ============================================================ */
 "use strict";
 
@@ -28,8 +28,10 @@ var ADMOB_APP_ID = "ca-app-pub-3072905039105762~6322501776"; // 매수 스카우
 //   v3.1(versionCode 3) 2026-07-22 프로덕션 출시 → 이후 Play 에 5(3.2) 업로드됨
 //   (그 5(3.2) 빌드에는 edge-to-edge 수정/R8 미포함) → 6(3.3) 2026-07-24 출시
 //   → 7(3.4) 2026-10: 관심종목 + 점수 변동 푸시(FCM 토픽) + 인앱 리뷰 + 설치 리퍼러 측정
-var VERSION_CODE = 7;
-var VERSION_NAME = "3.4"; // ← 다음 출시 이름 — 실제 출시 전에 원하는 버전명으로 확인/수정
+//   → 8(3.5) 2026-11: 알림이 안 뜨던 문제 — 앱이 열려 있을 때도 알림 표시(capacitor.config.json presentationOptions),
+//                     연결 상태·'다시 연결'·채널 꺼짐 안내·테스트 코드, POST_NOTIFICATIONS 명시
+var VERSION_CODE = 8;
+var VERSION_NAME = "3.5"; // ← 다음 출시 이름 — 실제 출시 전에 원하는 버전명으로 확인/수정
 
 // ★ 대상 API 수준 — Google Play 요구사항 (2026-08-31까지 36 필수, 매년 상향됨)
 var TARGET_SDK = 36;
@@ -395,7 +397,14 @@ function ensureMeta(name, attr, value) {
 }
 ensureMeta("com.google.firebase.messaging.default_notification_icon", "android:resource", "@drawable/ic_stat_ms");
 ensureMeta("com.google.firebase.messaging.default_notification_channel_id", "android:value", "score");
+// 12-b) Android 13+ 알림 권한. firebase-messaging 라이브러리 매니페스트에도 있지만(병합됨) 앱 매니페스트에 직접 적어
+//       라이브러리 버전·병합 규칙이 바뀌어도 권한 요청 창이 안 뜨는 일(= 알림 영구 차단)이 없게 한다 (v3.5, 중복은 병합 시 하나로 합쳐짐).
+if (mf.indexOf("android.permission.POST_NOTIFICATIONS") < 0) {
+  mf = mf.replace(/(<uses-permission android:name="android\.permission\.INTERNET"\s*\/>)/,
+    '$1\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />');
+  if (mf.indexOf("android.permission.POST_NOTIFICATIONS") < 0) mf = mf.replace(/(<\/manifest>)/, '    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n$1');
+}
 fs.writeFileSync(MANIFEST, mf);
-ok("알림 아이콘(@drawable/ic_stat_ms) + 기본 채널(score) meta-data");
+ok("알림 아이콘(@drawable/ic_stat_ms) + 기본 채널(score) meta-data + POST_NOTIFICATIONS 권한");
 
 console.log("\n완료! 이제 `npm run sync`(= html + bundles + cap sync) → `cd android && gradlew bundleRelease` 로 AAB 를 만드세요.");

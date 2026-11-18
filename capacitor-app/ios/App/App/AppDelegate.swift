@@ -33,6 +33,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     }
 
+    // 푸시(@capacitor/push-notifications · @capacitor-community/fcm): APNs 토큰을 Capacitor 에 넘긴다.
+    // 이 두 함수가 없으면 iOS 에서 register() 가 끝나지 않아 FCM 토큰도, 토픽 구독도 생기지 않는다(= 알림이 안 옴).
+    // iOS 푸시에는 이것 말고도 GoogleService-Info.plist · Push Notifications capability(aps-environment) ·
+    // Firebase 콘솔의 APNs 인증 키가 필요하다 — capacitor-app/아이폰_출시_가이드.md '푸시 알림' 참고.
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)
+    }
+
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)
+    }
+
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
         // Called when the app was launched with a url. Feel free to add additional processing here,
         // but if you want the App API to support tracking app url opens, make sure to keep this call
