@@ -319,9 +319,9 @@
    "total": 0
   },
   "AVGO": {
-   "date": "2026-11-13",
-   "gate": "risk",
-   "total": 75
+   "date": "2026-11-21",
+   "gate": "watch",
+   "total": 52
   },
   "AXP": {
    "date": "2026-11-17",
@@ -369,9 +369,9 @@
    "total": 68
   },
   "GE": {
-   "date": "2026-11-10",
-   "gate": "exclude",
-   "total": 0
+   "date": "2026-11-21",
+   "gate": "watch",
+   "total": 66
   },
   "GEV": {
    "date": "2026-10-31",
@@ -459,9 +459,9 @@
    "total": 40
   },
   "MSFT": {
-   "date": "2026-11-20",
-   "gate": "below",
-   "total": 59
+   "date": "2026-11-21",
+   "gate": "exclude",
+   "total": 0
   },
   "MU": {
    "date": "2026-11-18",
@@ -489,9 +489,9 @@
    "total": 0
   },
   "PG": {
-   "date": "2026-11-11",
+   "date": "2026-11-21",
    "gate": "watch",
-   "total": 56
+   "total": 66
   },
   "PLTR": {
    "date": "2026-11-19",
@@ -504,14 +504,14 @@
    "total": 0
   },
   "RTX": {
-   "date": "2026-11-19",
+   "date": "2026-11-21",
    "gate": "watch",
-   "total": 69
+   "total": 58
   },
   "SPCX": {
-   "date": "2026-11-20",
-   "gate": "risk",
-   "total": 71
+   "date": "2026-11-21",
+   "gate": "below",
+   "total": 46
   },
   "TMO": {
    "date": "2026-11-12",
@@ -524,9 +524,9 @@
    "total": 22
   },
   "TXN": {
-   "date": "2026-11-11",
-   "gate": "watch",
-   "total": 69
+   "date": "2026-11-21",
+   "gate": "exclude",
+   "total": 0
   },
   "UNH": {
    "date": "2026-11-20",
@@ -554,5 +554,5 @@
    "total": 0
   }
  },
- "updated_at": "2026-11-20T13:08:57+09:00"
+ "updated_at": "2026-11-21T03:49:47+09:00"
 }
