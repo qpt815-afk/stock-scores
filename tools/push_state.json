@@ -299,14 +299,14 @@
    "total": 49
   },
   "AMD": {
-   "date": "2026-11-11",
-   "gate": "exclude",
-   "total": 0
+   "date": "2026-11-24",
+   "gate": "below",
+   "total": 47
   },
   "AMGN": {
-   "date": "2026-11-20",
-   "gate": "exclude",
-   "total": 0
+   "date": "2026-11-24",
+   "gate": "watch",
+   "total": 68
   },
   "AMZN": {
    "date": "2026-11-13",
@@ -354,9 +354,9 @@
    "total": 0
   },
   "CSCO": {
-   "date": "2026-11-18",
-   "gate": "below",
-   "total": 54
+   "date": "2026-11-24",
+   "gate": "ok",
+   "total": 76
   },
   "CVX": {
    "date": "2026-11-20",
@@ -369,9 +369,9 @@
    "total": 68
   },
   "GE": {
-   "date": "2026-11-21",
+   "date": "2026-11-24",
    "gate": "watch",
-   "total": 66
+   "total": 54
   },
   "GEV": {
    "date": "2026-10-31",
@@ -399,14 +399,14 @@
    "total": 57
   },
   "IBM": {
-   "date": "2026-11-18",
-   "gate": "below",
-   "total": 44
+   "date": "2026-11-24",
+   "gate": "watch",
+   "total": 54
   },
   "INTC": {
-   "date": "2026-11-18",
-   "gate": "below",
-   "total": 55
+   "date": "2026-11-24",
+   "gate": "ok",
+   "total": 75
   },
   "JNJ": {
    "date": "2026-11-12",
@@ -434,9 +434,9 @@
    "total": 64
   },
   "LRCX": {
-   "date": "2026-11-18",
-   "gate": "below",
-   "total": 48
+   "date": "2026-11-24",
+   "gate": "watch",
+   "total": 59
   },
   "MA": {
    "date": "2026-11-04",
@@ -459,9 +459,9 @@
    "total": 40
   },
   "MSFT": {
-   "date": "2026-11-21",
-   "gate": "exclude",
-   "total": 0
+   "date": "2026-11-24",
+   "gate": "below",
+   "total": 51
   },
   "MU": {
    "date": "2026-11-18",
@@ -474,9 +474,9 @@
    "total": 56
   },
   "NVDA": {
-   "date": "2026-11-07",
-   "gate": "below",
-   "total": 54
+   "date": "2026-11-24",
+   "gate": "risk",
+   "total": 75
   },
   "ORCL": {
    "date": "2026-11-18",
@@ -514,19 +514,19 @@
    "total": 46
   },
   "TMO": {
-   "date": "2026-11-12",
+   "date": "2026-11-24",
    "gate": "watch",
-   "total": 68
+   "total": 58
   },
   "TSLA": {
-   "date": "2026-11-20",
+   "date": "2026-11-24",
    "gate": "below",
-   "total": 22
+   "total": 51
   },
   "TXN": {
-   "date": "2026-11-21",
-   "gate": "exclude",
-   "total": 0
+   "date": "2026-11-24",
+   "gate": "watch",
+   "total": 64
   },
   "UNH": {
    "date": "2026-11-20",
@@ -554,5 +554,5 @@
    "total": 0
   }
  },
- "updated_at": "2026-11-23T12:53:20+09:00"
+ "updated_at": "2026-11-24T07:13:27+09:00"
 }
