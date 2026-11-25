@@ -314,9 +314,9 @@
    "total": 68
   },
   "AMZN": {
-   "date": "2026-11-13",
+   "date": "2026-11-26",
    "gate": "watch",
-   "total": 69
+   "total": 57
   },
   "ANET": {
    "date": "2026-11-11",
@@ -334,9 +334,9 @@
    "total": 56
   },
   "BAC": {
-   "date": "2026-11-18",
-   "gate": "below",
-   "total": 39
+   "date": "2026-11-26",
+   "gate": "watch",
+   "total": 51
   },
   "BRK-B": {
    "date": "2026-11-04",
@@ -359,9 +359,9 @@
    "total": 0
   },
   "CSCO": {
-   "date": "2026-11-24",
-   "gate": "ok",
-   "total": 76
+   "date": "2026-11-26",
+   "gate": "below",
+   "total": 54
   },
   "CVX": {
    "date": "2026-11-20",
@@ -404,14 +404,14 @@
    "total": 57
   },
   "IBM": {
-   "date": "2026-11-24",
-   "gate": "watch",
-   "total": 54
+   "date": "2026-11-26",
+   "gate": "ok",
+   "total": 66
   },
   "INTC": {
-   "date": "2026-11-24",
-   "gate": "ok",
-   "total": 75
+   "date": "2026-11-26",
+   "gate": "below",
+   "total": 58
   },
   "JNJ": {
    "date": "2026-11-12",
@@ -419,9 +419,9 @@
    "total": 53
   },
   "JPM": {
-   "date": "2026-11-19",
-   "gate": "exclude",
-   "total": 0
+   "date": "2026-11-26",
+   "gate": "below",
+   "total": 49
   },
   "KLAC": {
    "date": "2026-10-15",
@@ -454,9 +454,9 @@
    "total": 31
   },
   "MRK": {
-   "date": "2026-11-20",
-   "gate": "exclude",
-   "total": 0
+   "date": "2026-11-26",
+   "gate": "below",
+   "total": 64
   },
   "MS": {
    "date": "2026-11-18",
@@ -464,9 +464,9 @@
    "total": 40
   },
   "MSFT": {
-   "date": "2026-11-24",
+   "date": "2026-11-26",
    "gate": "below",
-   "total": 51
+   "total": 62
   },
   "MU": {
    "date": "2026-11-18",
@@ -479,9 +479,9 @@
    "total": 56
   },
   "NVDA": {
-   "date": "2026-11-24",
-   "gate": "risk",
-   "total": 75
+   "date": "2026-11-26",
+   "gate": "watch",
+   "total": 54
   },
   "ORCL": {
    "date": "2026-11-18",
@@ -499,9 +499,9 @@
    "total": 66
   },
   "PLTR": {
-   "date": "2026-11-19",
-   "gate": "below",
-   "total": 50
+   "date": "2026-11-26",
+   "gate": "ok",
+   "total": 65
   },
   "PM": {
    "date": "2026-11-20",
@@ -514,9 +514,9 @@
    "total": 58
   },
   "SPCX": {
-   "date": "2026-11-21",
+   "date": "2026-11-26",
    "gate": "below",
-   "total": 46
+   "total": 61
   },
   "TMO": {
    "date": "2026-11-24",
@@ -529,9 +529,9 @@
    "total": 51
   },
   "TXN": {
-   "date": "2026-11-24",
-   "gate": "watch",
-   "total": 64
+   "date": "2026-11-26",
+   "gate": "below",
+   "total": 50
   },
   "UNH": {
    "date": "2026-11-20",
@@ -539,14 +539,14 @@
    "total": 50
   },
   "V": {
-   "date": "2026-10-31",
-   "gate": "below",
-   "total": 64
+   "date": "2026-11-26",
+   "gate": "watch",
+   "total": 54
   },
   "WFC": {
-   "date": "2026-11-20",
-   "gate": "exclude",
-   "total": 0
+   "date": "2026-11-26",
+   "gate": "below",
+   "total": 64
   },
   "WMT": {
    "date": "2026-11-05",
@@ -559,5 +559,5 @@
    "total": 0
   }
  },
- "updated_at": "2026-11-25T14:34:59+09:00"
+ "updated_at": "2026-11-26T05:10:50+09:00"
 }
